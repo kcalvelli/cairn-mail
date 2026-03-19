@@ -434,3 +434,136 @@ class AxiosMailClient:
             Result dict with status
         """
         return await self._request("DELETE", f"/api/drafts/{draft_id}")
+
+    # Tag operations
+
+    async def update_tags(
+        self,
+        message_id: str,
+        tags: list[str],
+    ) -> dict[str, Any]:
+        """Update tags on a single message.
+
+        Args:
+            message_id: Message ID
+            tags: New list of tags
+
+        Returns:
+            Updated message dict
+        """
+        return await self._request(
+            "PUT",
+            f"/api/messages/{message_id}/tags",
+            json={"tags": tags},
+        )
+
+    async def bulk_update_tags(
+        self,
+        message_ids: list[str],
+        tags: list[str],
+    ) -> dict[str, Any]:
+        """Update tags on multiple messages at once.
+
+        Args:
+            message_ids: List of message IDs
+            tags: Tags to apply to all messages
+
+        Returns:
+            Result dict with updated/errors counts
+        """
+        return await self._request(
+            "PUT",
+            "/api/messages/bulk/tags",
+            json={"message_ids": message_ids, "tags": tags},
+        )
+
+    # Filter operations
+
+    async def delete_by_filter(
+        self,
+        tag: str | None = None,
+        folder: str | None = None,
+        account_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Delete all messages matching filters (move to trash).
+
+        Args:
+            tag: Filter by tag
+            folder: Filter by folder
+            account_id: Filter by account ID
+
+        Returns:
+            Result dict with moved_to_trash count and errors
+        """
+        params: dict[str, Any] = {}
+        if tag:
+            params["tags"] = tag
+        if folder:
+            params["folder"] = folder
+        if account_id:
+            params["account_id"] = account_id
+        return await self._request(
+            "POST",
+            "/api/messages/delete-all",
+            params=params,
+        )
+
+    async def restore_messages(
+        self,
+        message_ids: list[str],
+    ) -> dict[str, Any]:
+        """Restore messages from trash.
+
+        Args:
+            message_ids: List of message IDs to restore
+
+        Returns:
+            Result dict with restored/errors counts
+        """
+        return await self._request(
+            "POST",
+            "/api/messages/bulk/restore",
+            json={"message_ids": message_ids},
+        )
+
+    async def get_unread_count(
+        self,
+        account_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Get unread message count.
+
+        Args:
+            account_id: Optional account ID to filter by
+
+        Returns:
+            Dict with count field
+        """
+        params: dict[str, Any] = {}
+        if account_id:
+            params["account_id"] = account_id
+        return await self._request(
+            "GET",
+            "/api/messages/unread-count",
+            params=params,
+        )
+
+    async def list_tags(
+        self,
+        account_id: str | None = None,
+    ) -> dict[str, Any]:
+        """List all tags with counts.
+
+        Args:
+            account_id: Optional account ID to filter by
+
+        Returns:
+            Dict with tags list
+        """
+        params: dict[str, Any] = {}
+        if account_id:
+            params["account_id"] = account_id
+        return await self._request(
+            "GET",
+            "/api/tags",
+            params=params,
+        )

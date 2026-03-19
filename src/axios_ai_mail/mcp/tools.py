@@ -464,3 +464,202 @@ def register_tools(mcp: FastMCP, client: AxiosMailClient) -> None:
             return {"error": str(e)}
         except APIError as e:
             return {"error": str(e)}
+
+    @mcp.tool()
+    async def update_tags(
+        message_id: str,
+        tags: list[str],
+    ) -> dict[str, Any]:
+        """Set classification tags on a message.
+
+        Updates the message's tags and records the change as DFSL feedback
+        so the classification system learns from corrections.
+
+        Args:
+            message_id: The ID of the message to tag.
+            tags: List of tags to set (e.g., ["newsletter", "low-priority"]).
+                  Replaces all existing tags on the message.
+
+        Returns:
+            Updated message with new tags.
+        """
+        try:
+            result = await client.update_tags(message_id, tags)
+            return {
+                "id": result.get("id", message_id),
+                "tags": result.get("tags", tags),
+                "status": "tags_updated",
+            }
+        except APIConnectionError as e:
+            return {"error": str(e)}
+        except APIError as e:
+            return {"error": str(e)}
+
+    @mcp.tool()
+    async def bulk_update_tags(
+        message_ids: list[str],
+        tags: list[str],
+    ) -> dict[str, Any]:
+        """Set the same classification tags on multiple messages at once.
+
+        Useful for batch operations like tagging all newsletters or marking
+        a group of messages with the same category. Records DFSL feedback
+        for each update.
+
+        Args:
+            message_ids: List of message IDs to tag.
+            tags: List of tags to apply to all messages.
+
+        Returns:
+            Dict with count of updated messages and any errors.
+        """
+        try:
+            result = await client.bulk_update_tags(message_ids, tags)
+            return {
+                "updated": result.get("updated", 0),
+                "total": result.get("total", len(message_ids)),
+                "tags": tags,
+                "action": "tags_updated",
+                "errors": result.get("errors", []),
+            }
+        except APIConnectionError as e:
+            return {"error": str(e)}
+        except APIError as e:
+            return {"error": str(e)}
+
+    @mcp.tool()
+    async def delete_by_filter(
+        tag: str | None = None,
+        folder: str | None = None,
+        account: str | None = None,
+    ) -> dict[str, Any]:
+        """Delete all messages matching the given filters (moves to trash).
+
+        At least one filter must be provided to prevent accidental deletion
+        of all messages.
+
+        Args:
+            tag: Filter by classification tag (e.g., "spam", "newsletter").
+            folder: Filter by folder (e.g., "inbox", "sent").
+            account: Account name or ID to filter by.
+
+        Returns:
+            Dict with count of messages moved to trash.
+        """
+        try:
+            if not tag and not folder and not account:
+                return {
+                    "error": "At least one filter (tag, folder, or account) is required "
+                    "to prevent accidental deletion of all messages."
+                }
+
+            # Resolve account if specified
+            account_id = None
+            if account:
+                accounts = await client.list_accounts()
+                try:
+                    resolved = resolve_account(account, accounts)
+                    account_id = resolved.id
+                except AccountResolutionError as e:
+                    return {"error": str(e), "available_accounts": e.available_accounts}
+
+            result = await client.delete_by_filter(
+                tag=tag,
+                folder=folder,
+                account_id=account_id,
+            )
+            return {
+                "moved_to_trash": result.get("moved_to_trash", 0),
+                "total": result.get("total", 0),
+                "action": "moved_to_trash",
+                "errors": result.get("errors", []),
+            }
+        except APIConnectionError as e:
+            return {"error": str(e)}
+        except APIError as e:
+            return {"error": str(e)}
+
+    @mcp.tool()
+    async def restore_email(
+        message_ids: str | list[str],
+    ) -> dict[str, Any]:
+        """Restore messages from trash back to inbox.
+
+        Args:
+            message_ids: Single message ID or list of IDs to restore.
+
+        Returns:
+            Dict with count of restored messages.
+        """
+        try:
+            if isinstance(message_ids, str):
+                ids = [message_ids]
+            else:
+                ids = list(message_ids)
+
+            result = await client.restore_messages(ids)
+            return {
+                "restored": result.get("restored", 0),
+                "total": result.get("total", len(ids)),
+                "action": "restored_from_trash",
+                "errors": result.get("errors", []),
+            }
+        except APIConnectionError as e:
+            return {"error": str(e)}
+        except APIError as e:
+            return {"error": str(e)}
+
+    @mcp.tool()
+    async def get_unread_count(
+        account: str | None = None,
+    ) -> dict[str, Any]:
+        """Get the count of unread messages without fetching message details.
+
+        Useful for quick "do I have mail?" checks.
+
+        Args:
+            account: Account name or ID. If omitted, returns total across all accounts.
+
+        Returns:
+            Dict with unread message count.
+        """
+        try:
+            account_id = None
+            if account:
+                accounts = await client.list_accounts()
+                try:
+                    resolved = resolve_account(account, accounts)
+                    account_id = resolved.id
+                except AccountResolutionError as e:
+                    return {"error": str(e), "available_accounts": e.available_accounts}
+
+            result = await client.get_unread_count(account_id)
+            return {
+                "unread_count": result.get("count", 0),
+                "account": account or "all",
+            }
+        except APIConnectionError as e:
+            return {"error": str(e)}
+        except APIError as e:
+            return {"error": str(e)}
+
+    @mcp.tool()
+    async def list_tags() -> dict[str, Any]:
+        """List all available tags with message counts.
+
+        Shows which classification tags exist and how many messages have each tag.
+        Useful for discovering what tags are available before filtering or tagging.
+
+        Returns:
+            Dict with list of tags, each having name and count.
+        """
+        try:
+            result = await client.list_tags()
+            return {
+                "tags": result.get("tags", []),
+                "total_tags": len(result.get("tags", [])),
+            }
+        except APIConnectionError as e:
+            return {"error": str(e)}
+        except APIError as e:
+            return {"error": str(e)}

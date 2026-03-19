@@ -435,6 +435,71 @@ async def bulk_permanent_delete(request: Request, body: BulkDeleteRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class BulkTagsRequest(BaseModel):
+    """Request to update tags on multiple messages."""
+    message_ids: List[str]
+    tags: List[str]
+
+
+@router.put("/messages/bulk/tags")
+async def bulk_update_tags(request: Request, body: BulkTagsRequest):
+    """Update tags on multiple messages at once.
+
+    Applies the same tag set to all listed messages. Records DFSL feedback
+    for each update so the classification system learns from corrections.
+    """
+    db = request.app.state.db
+
+    try:
+        updated_count = 0
+        updated_ids = []
+        errors = []
+
+        for message_id in body.message_ids:
+            try:
+                message = db.get_message(message_id)
+                if not message:
+                    errors.append({"message_id": message_id, "error": "Not found"})
+                    continue
+
+                classification = db.get_classification(message_id)
+                if classification:
+                    db.update_message_tags(
+                        message_id=message_id,
+                        tags=body.tags,
+                        user_edited=True,
+                    )
+                else:
+                    db.store_classification(
+                        message_id=message_id,
+                        tags=body.tags,
+                        priority="normal",
+                        todo=False,
+                        can_archive=False,
+                        model="manual",
+                        confidence=1.0,
+                    )
+
+                updated_count += 1
+                updated_ids.append(message_id)
+            except Exception as e:
+                errors.append({"message_id": message_id, "error": str(e)})
+                logger.error(f"Error updating tags for message {message_id}: {e}")
+
+        if updated_ids:
+            asyncio.create_task(send_messages_updated(updated_ids, "tags_updated"))
+
+        return {
+            "updated": updated_count,
+            "total": len(body.message_ids),
+            "errors": errors,
+        }
+
+    except Exception as e:
+        logger.error(f"Error in bulk update tags: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/messages/{message_id}", response_model=MessageResponse)
 async def get_message(request: Request, message_id: str):
     """Get a single message by ID."""
