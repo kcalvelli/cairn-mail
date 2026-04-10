@@ -315,3 +315,18 @@ class ConfigLoader:
             except Exception as e:
                 logger.error(f"Failed to sync account {account_id}: {e}")
                 raise
+
+        # Prune ghost accounts: anything in the DB that isn't in the config
+        # anymore gets removed, along with all of its messages, classifications,
+        # feedback, drafts, pending ops, etc. (via FK cascade). Renames are
+        # already handled inside create_or_update_account, so by this point the
+        # renamed account is in `config_accounts` under its new ID.
+        configured_ids = set(config_accounts.keys())
+        for db_account in db.list_accounts():
+            if db_account.id in configured_ids:
+                continue
+            logger.info(
+                f"Removing ghost account {db_account.id!r} ({db_account.email}) — "
+                "no longer present in configuration"
+            )
+            db.delete_account(db_account.id)

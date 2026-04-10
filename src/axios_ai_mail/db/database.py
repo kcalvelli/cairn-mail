@@ -195,6 +195,25 @@ class Database:
             account = session.get(Account, account_id)
             return account.last_sync if account else None
 
+    def delete_account(self, account_id: str) -> bool:
+        """Delete an account and cascade to all of its related rows.
+
+        All tables that reference accounts use ON DELETE CASCADE, and the
+        Account → Message relationship uses ``delete-orphan``, so removing
+        the account row wipes its messages, classifications, feedback,
+        drafts, pending operations, action log, and trusted senders.
+
+        Returns:
+            True if an account was deleted, False if no such account existed.
+        """
+        with self.session() as session:
+            account = session.get(Account, account_id)
+            if not account:
+                return False
+            session.delete(account)
+            session.commit()
+            return True
+
     # Message operations
 
     def get_message(self, message_id: str) -> Optional[Message]:
