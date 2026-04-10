@@ -181,18 +181,21 @@ async def list_messages(
 @router.get("/messages/unread-count")
 async def get_unread_count(
     request: Request,
+    account_id: Optional[str] = Query(None, description="Filter by account ID"),
     exclude_hidden_accounts: bool = Query(False, description="Exclude hidden accounts (for GUI)"),
 ):
     """Get count of unread messages in inbox.
 
-    By default, includes all accounts. Use exclude_hidden_accounts=true for GUI.
+    By default, includes all accounts. Pass account_id to scope the count
+    to a single account, or exclude_hidden_accounts=true for the GUI.
     """
     db = request.app.state.db
 
     try:
-        # Get hidden account IDs for filtering (only if requested for GUI)
+        # Get hidden account IDs for filtering (only if requested for GUI,
+        # and only when not already scoped to a single account)
         exclude_account_ids = None
-        if exclude_hidden_accounts:
+        if exclude_hidden_accounts and not account_id:
             accounts = db.list_accounts()
             exclude_account_ids = [
                 acc.id for acc in accounts
@@ -200,6 +203,7 @@ async def get_unread_count(
             ]
 
         count = db.count_messages(
+            account_id=account_id,
             folder="inbox",
             is_unread=True,
             exclude_account_ids=exclude_account_ids if exclude_account_ids else None,
