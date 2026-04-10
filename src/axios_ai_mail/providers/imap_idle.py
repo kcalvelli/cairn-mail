@@ -73,13 +73,15 @@ class IMAPIdleConnection:
             # Load password
             password = Credentials.load_password(self.config.credential_file)
 
-            # Connect
+            # Connect (timeout prevents indefinite hang on flaky servers)
             if self.config.use_ssl:
                 self._connection = imaplib.IMAP4_SSL(
-                    self.config.host, self.config.port
+                    self.config.host, self.config.port, timeout=30
                 )
             else:
-                self._connection = imaplib.IMAP4(self.config.host, self.config.port)
+                self._connection = imaplib.IMAP4(
+                    self.config.host, self.config.port, timeout=30
+                )
 
             # Login
             self._connection.login(self.config.email, password)

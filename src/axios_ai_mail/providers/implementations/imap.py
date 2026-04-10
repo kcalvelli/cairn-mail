@@ -52,11 +52,11 @@ class IMAPProvider(BaseEmailProvider):
         # Load password from credential file
         password = Credentials.load_password(self.config.credential_file)
 
-        # Connect to IMAP server
+        # Connect to IMAP server (timeout prevents indefinite hang on flaky servers)
         if self.config.use_ssl:
-            conn = imaplib.IMAP4_SSL(self.config.host, self.config.port)
+            conn = imaplib.IMAP4_SSL(self.config.host, self.config.port, timeout=30)
         else:
-            conn = imaplib.IMAP4(self.config.host, self.config.port)
+            conn = imaplib.IMAP4(self.config.host, self.config.port, timeout=30)
 
         # Login
         conn.login(self.config.email, password)
