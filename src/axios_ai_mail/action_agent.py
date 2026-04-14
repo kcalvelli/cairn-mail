@@ -8,6 +8,7 @@ the corresponding MCP tool via mcp-gateway's REST API.
 import calendar
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -345,7 +346,12 @@ class ActionAgent:
         response.raise_for_status()
 
         result = response.json()
-        response_text = result["choices"][0]["message"]["content"]
+        response_text = result["choices"][0]["message"]["content"] or ""
+        # Strip markdown fences some backends add despite response_format
+        stripped = response_text.strip()
+        fence_match = re.match(r"^```(?:json)?\s*\n?(.*?)\n?\s*```$", stripped, re.DOTALL)
+        if fence_match:
+            response_text = fence_match.group(1).strip()
 
         try:
             extracted = json.loads(response_text)

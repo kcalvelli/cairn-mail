@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Dict, List, Optional
 
@@ -87,6 +88,18 @@ class AIClassifier:
         )
 
         return block
+
+    @staticmethod
+    def _strip_markdown_fences(text: str) -> str:
+        """Strip markdown code fences from LLM output.
+
+        Some backends ignore response_format and wrap JSON in ```json ... ```.
+        """
+        stripped = text.strip()
+        match = re.match(r"^```(?:json)?\s*\n?(.*?)\n?\s*```$", stripped, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return stripped
 
     @staticmethod
     def _extract_domain(email: str) -> str:
@@ -220,8 +233,9 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
             response.raise_for_status()
             result = response.json()
 
-            # Parse LLM response
+            # Parse LLM response — strip markdown fences some backends add
             classification_json = result["choices"][0]["message"]["content"] or ""
+            classification_json = self._strip_markdown_fences(classification_json)
             classification_data = json.loads(classification_json)
 
             # Validate and normalize
@@ -400,8 +414,9 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
             response.raise_for_status()
             result = response.json()
 
-            # Parse LLM response
-            response_json = result["choices"][0]["message"]["content"]
+            # Parse LLM response — strip markdown fences some backends add
+            response_json = result["choices"][0]["message"]["content"] or ""
+            response_json = self._strip_markdown_fences(response_json)
             response_data = json.loads(response_json)
 
             # Extract replies

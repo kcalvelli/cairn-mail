@@ -241,6 +241,51 @@ class TestTagNormalization:
         assert result == ["personal"]
 
 
+class TestMarkdownFenceStripping:
+    """Tests for stripping markdown code fences from LLM responses."""
+
+    def test_fenced_json_response_parsed_correctly(
+        self, classifier: AIClassifier, sample_message: Message
+    ) -> None:
+        """Test that markdown-fenced JSON is stripped and parsed."""
+        fenced = '```json\n{"tags": ["finance"], "priority": "normal", "action_required": false, "can_archive": true, "confidence": 0.92}\n```'
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": fenced}}]
+        }
+        mock_response.raise_for_status = Mock()
+
+        with patch("requests.post") as mock_post:
+            mock_post.return_value = mock_response
+            result = classifier.classify(sample_message)
+
+        assert result.tags == ["finance"]
+        assert result.confidence == 0.92
+
+    def test_unfenced_json_still_works(
+        self, classifier: AIClassifier, sample_message: Message
+    ) -> None:
+        """Test that clean JSON without fences still parses fine."""
+        clean = '{"tags": ["dev"], "priority": "high", "action_required": true, "can_archive": false, "confidence": 0.88}'
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": clean}}]
+        }
+        mock_response.raise_for_status = Mock()
+
+        with patch("requests.post") as mock_post:
+            mock_post.return_value = mock_response
+            result = classifier.classify(sample_message)
+
+        assert result.tags == ["dev"]
+        assert result.confidence == 0.88
+
+    def test_fence_without_language_tag(self, classifier: AIClassifier) -> None:
+        """Test fences without 'json' language specifier."""
+        result = classifier._strip_markdown_fences('```\n{"key": "value"}\n```')
+        assert result == '{"key": "value"}'
+
+
 class TestCustomTags:
     """Tests for custom tag configuration."""
 
