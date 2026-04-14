@@ -15,7 +15,7 @@ def ai_config() -> AIConfig:
     """Create a test AI config."""
     return AIConfig(
         model="test-model",
-        endpoint="http://localhost:11434",
+        endpoint="http://localhost:18789",
         temperature=0.3,
     )
 
@@ -48,11 +48,11 @@ def sample_message() -> Message:
 class TestConfidenceParsing:
     """Tests for confidence score parsing from LLM responses."""
 
-    def _mock_ollama_response(self, classifier: AIClassifier, response_data: dict) -> Mock:
-        """Helper to create a mock Ollama response."""
+    def _mock_llm_response(self, classifier: AIClassifier, response_data: dict) -> Mock:
+        """Helper to create a mock OpenAI-compatible API response."""
         mock_response = Mock()
         mock_response.json.return_value = {
-            "response": json.dumps(response_data)
+            "choices": [{"message": {"content": json.dumps(response_data)}}]
         }
         mock_response.raise_for_status = Mock()
         return mock_response
@@ -70,7 +70,7 @@ class TestConfidenceParsing:
         }
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value = self._mock_ollama_response(classifier, response_data)
+            mock_post.return_value = self._mock_llm_response(classifier, response_data)
             result = classifier.classify(sample_message)
 
         assert result.confidence == 0.85
@@ -88,7 +88,7 @@ class TestConfidenceParsing:
         }
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value = self._mock_ollama_response(classifier, response_data)
+            mock_post.return_value = self._mock_llm_response(classifier, response_data)
             result = classifier.classify(sample_message)
 
         assert result.confidence == 0.8
@@ -106,7 +106,7 @@ class TestConfidenceParsing:
         }
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value = self._mock_ollama_response(classifier, response_data)
+            mock_post.return_value = self._mock_llm_response(classifier, response_data)
             result = classifier.classify(sample_message)
 
         assert result.confidence == 1.0
@@ -124,7 +124,7 @@ class TestConfidenceParsing:
         }
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value = self._mock_ollama_response(classifier, response_data)
+            mock_post.return_value = self._mock_llm_response(classifier, response_data)
             result = classifier.classify(sample_message)
 
         assert result.confidence == 0.0
@@ -142,7 +142,7 @@ class TestConfidenceParsing:
         }
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value = self._mock_ollama_response(classifier, response_data)
+            mock_post.return_value = self._mock_llm_response(classifier, response_data)
             result = classifier.classify(sample_message)
 
         assert result.confidence == 0.8
@@ -160,7 +160,7 @@ class TestConfidenceParsing:
         }
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value = self._mock_ollama_response(classifier, response_data)
+            mock_post.return_value = self._mock_llm_response(classifier, response_data)
             result = classifier.classify(sample_message)
 
         assert result.confidence == 0.8
@@ -178,7 +178,7 @@ class TestConfidenceParsing:
         }
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value = self._mock_ollama_response(classifier, response_data)
+            mock_post.return_value = self._mock_llm_response(classifier, response_data)
             result = classifier.classify(sample_message)
 
         assert result.confidence == 1.0
@@ -189,7 +189,7 @@ class TestConfidenceParsing:
     ) -> None:
         """Test that JSON parse errors return classification with 0.5 confidence."""
         mock_response = Mock()
-        mock_response.json.return_value = {"response": "not valid json{{{"}
+        mock_response.json.return_value = {"choices": [{"message": {"content": "not valid json{{{"}}]}
         mock_response.raise_for_status = Mock()
 
         with patch("requests.post") as mock_post:
@@ -299,7 +299,7 @@ class TestClassificationResult:
 
         with patch("requests.post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {"response": json.dumps(response_data)}
+            mock_response.json.return_value = {"choices": [{"message": {"content": json.dumps(response_data)}}]}
             mock_response.raise_for_status = Mock()
             mock_post.return_value = mock_response
 
@@ -326,7 +326,7 @@ class TestClassificationResult:
 
         with patch("requests.post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {"response": json.dumps(response_data)}
+            mock_response.json.return_value = {"choices": [{"message": {"content": json.dumps(response_data)}}]}
             mock_response.raise_for_status = Mock()
             mock_post.return_value = mock_response
 

@@ -274,8 +274,8 @@ async def startup_event():
             # Get merged tags from config
             merged_tags = ConfigLoader.get_merged_tags(config)
             classifier_config = AIConfig(
-                model=ai_config.get("model", "llama3.2"),
-                endpoint=ai_config.get("endpoint", "http://localhost:11434"),
+                model=ai_config.get("model", "claude-sonnet-4-20250514"),
+                endpoint=ai_config.get("endpoint", "http://localhost:18789"),
                 temperature=ai_config.get("temperature", 0.3),
                 custom_tags=merged_tags,
             )

@@ -35,8 +35,8 @@ def _create_ai_config(config: dict) -> AIConfig:
     custom_tags = ConfigLoader.get_custom_tags(config)
 
     return AIConfig(
-        model=ai_settings.get("model", "llama3.2"),
-        endpoint=ai_settings.get("endpoint", "http://localhost:11434"),
+        model=ai_settings.get("model", "claude-sonnet-4-20250514"),
+        endpoint=ai_settings.get("endpoint", "http://localhost:18789"),
         temperature=ai_settings.get("temperature", 0.3),
         custom_tags=custom_tags,
     )
@@ -69,7 +69,6 @@ def _create_action_agent(config: dict, db: Database) -> Optional[ActionAgent]:
     if not actions:
         return None
 
-    # Get AI settings for Ollama
     ai_settings = ConfigLoader.get_ai_config(config)
 
     gateway = GatewayClient(base_url=gateway_url)
@@ -77,8 +76,8 @@ def _create_action_agent(config: dict, db: Database) -> Optional[ActionAgent]:
         database=db,
         gateway=gateway,
         actions=actions,
-        ollama_endpoint=ai_settings.get("endpoint", "http://localhost:11434"),
-        ollama_model=ai_settings.get("model", "llama3.2"),
+        ai_endpoint=ai_settings.get("endpoint", "http://localhost:18789"),
+        ai_model=ai_settings.get("model", "claude-sonnet-4-20250514"),
     )
 
 

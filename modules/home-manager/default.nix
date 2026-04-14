@@ -283,15 +283,15 @@ in {
 
       model = mkOption {
         type = types.str;
-        default = "llama3.2";
-        description = "Ollama model to use for classification.";
-        example = "mistral";
+        default = "claude-sonnet-4-20250514";
+        description = "Model name for the OpenAI-compatible API.";
+        example = "llama3.2";
       };
 
       endpoint = mkOption {
         type = types.str;
-        default = "http://localhost:11434";
-        description = "Ollama API endpoint.";
+        default = "http://localhost:18789";
+        description = "OpenAI-compatible API endpoint (any /v1/chat/completions provider).";
       };
 
       temperature = mkOption {
@@ -476,7 +476,7 @@ in {
             type = types.nullOr types.str;
             default = null;
             description = ''
-              Custom Ollama prompt for extracting data from the email.
+              Custom LLM prompt for extracting data from the email.
               If null, the built-in prompt is used (for built-in actions).
             '';
           };

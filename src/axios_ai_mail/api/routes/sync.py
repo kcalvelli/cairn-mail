@@ -101,8 +101,8 @@ def _sync_account_blocking(account, ai_config, db, max_messages: int, config: di
                     database=db,
                     gateway=gateway,
                     actions=actions,
-                    ollama_endpoint=ai_settings.get("endpoint", "http://localhost:11434"),
-                    ollama_model=ai_settings.get("model", "llama3.2"),
+                    ai_endpoint=ai_settings.get("endpoint", "http://localhost:18789"),
+                    ai_model=ai_settings.get("model", "claude-sonnet-4-20250514"),
                 )
 
         sync_engine = SyncEngine(

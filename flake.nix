@@ -27,32 +27,6 @@
     packages = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
 
-      # Build ollama Python package since it's not in nixpkgs yet
-      ollama-python = pkgs.python3Packages.buildPythonPackage rec {
-        pname = "ollama";
-        version = "0.4.4";
-        format = "pyproject";
-
-        src = pkgs.fetchPypi {
-          inherit pname version;
-          hash = "sha256-4dsGQnPHObq8Ld6eqEApxKQ0FTVHQbbFCTnd090Pf/s=";
-        };
-
-        nativeBuildInputs = with pkgs.python3Packages; [
-          poetry-core
-          pythonRelaxDepsHook
-        ];
-
-        pythonRelaxDeps = [ "httpx" ];
-
-        propagatedBuildInputs = with pkgs.python3Packages; [
-          httpx
-          pydantic
-        ];
-
-        pythonImportsCheck = [ "ollama" ];
-        doCheck = false;
-      };
       # Build web frontend separately
       web-frontend = pkgs.buildNpmPackage {
         pname = "axios-ai-mail-web";
@@ -102,9 +76,6 @@
           # HTTP/API
           httpx
           requests
-
-          # AI/LLM
-          ollama-python
 
           # CLI
           click
@@ -160,7 +131,6 @@
           python311Packages.venvShellHook
 
           # For testing/dev
-          ollama
         ];
 
         venvDir = "./.venv";

@@ -1586,7 +1586,7 @@ class Database:
             server: MCP server ID (e.g., "dav")
             tool: MCP tool name (e.g., "create_contact")
             status: Execution status (success, failed, skipped)
-            extracted_data: Data extracted by Ollama
+            extracted_data: Data extracted by the LLM
             tool_result: Result returned by the MCP tool
             error: Error message if failed
             attempts: Number of attempts made

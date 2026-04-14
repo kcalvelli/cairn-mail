@@ -12,7 +12,7 @@ context: |
   - Backend: Python with FastAPI, SQLAlchemy, Alembic
   - Frontend: React with TypeScript, Material-UI, Vite
   - Database: SQLite with full-text search
-  - AI Engine: Ollama (local LLMs like llama3.2 or mistral)
+  - AI Engine: OpenAI-compatible API (any /v1/chat/completions provider)
   - Email Providers: Gmail API (OAuth2), IMAP (password-based)
   - Real-Time: WebSockets for live updates
   - Deployment: Nix Flake with NixOS/Home-Manager modules
@@ -46,12 +46,12 @@ context: |
   - PWA Support: Installable as desktop/mobile progressive web app
 
   ## Constraints
-  - Local AI Only: No cloud LLMs; must run via Ollama or similar
+  - AI Backend: Any OpenAI-compatible endpoint (/v1/chat/completions)
   - OAuth2 Security: Gmail uses OAuth2; IMAP passwords in encrypted files
   - Idempotency: Config generation and sync operations must be idempotent
   - Responsive Design: Web UI must work on desktop and mobile
 
   ## External Dependencies
-  - ollama: Local LLM runtime
+  - OpenAI-compatible API: LLM inference endpoint
   - agenix or sops-nix: Secret management
   - Google Cloud OAuth credentials (for Gmail)

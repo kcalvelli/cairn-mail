@@ -1,4 +1,4 @@
-"""AI classifier using local LLM (Ollama) for email categorization."""
+"""AI classifier using OpenAI-compatible API for email categorization."""
 
 import json
 import logging
@@ -18,17 +18,17 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AIConfig:
-    """AI classifier configuration."""
+    """AI classifier configuration for OpenAI-compatible API backends."""
 
-    model: str = "llama3.2"
-    endpoint: str = "http://localhost:11434"
+    model: str = "claude-sonnet-4-20250514"
+    endpoint: str = "http://localhost:18789"
     temperature: float = 0.3
     timeout: int = 30
     custom_tags: Optional[List[Dict[str, str]]] = None
 
 
 class AIClassifier:
-    """AI-powered email classifier using Ollama."""
+    """AI-powered email classifier using an OpenAI-compatible API."""
 
     # Default tag taxonomy
     DEFAULT_TAGS = [
@@ -207,16 +207,12 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
 
         try:
             response = requests.post(
-                f"{self.config.endpoint}/api/generate",
+                f"{self.config.endpoint}/v1/chat/completions",
                 json={
                     "model": self.config.model,
-                    "prompt": prompt,
-                    "format": "json",
-                    "stream": False,
-                    "keep_alive": 0,  # Unload model immediately after request to free VRAM
-                    "options": {
-                        "temperature": self.config.temperature,
-                    },
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": self.config.temperature,
+                    "response_format": {"type": "json_object"},
                 },
                 timeout=self.config.timeout,
             )
@@ -225,7 +221,7 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
             result = response.json()
 
             # Parse LLM response
-            classification_json = result.get("response", "")
+            classification_json = result["choices"][0]["message"]["content"]
             classification_data = json.loads(classification_json)
 
             # Validate and normalize
@@ -264,11 +260,11 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
 
         except requests.exceptions.Timeout:
             logger.error(
-                f"Ollama request timed out after {self.config.timeout}s for message {message.id}"
+                f"LLM request timed out after {self.config.timeout}s for message {message.id}"
             )
             raise
         except requests.exceptions.RequestException as e:
-            logger.error(f"Ollama API error for message {message.id}: {e}")
+            logger.error(f"LLM API error for message {message.id}: {e}")
             raise
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse LLM response for message {message.id}: {e}")
@@ -391,16 +387,12 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
 
         try:
             response = requests.post(
-                f"{self.config.endpoint}/api/generate",
+                f"{self.config.endpoint}/v1/chat/completions",
                 json={
                     "model": self.config.model,
-                    "prompt": prompt,
-                    "format": "json",
-                    "stream": False,
-                    "keep_alive": 0,  # Unload model immediately after request to free VRAM
-                    "options": {
-                        "temperature": 0.7,  # Higher temperature for more creative replies
-                    },
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7,  # Higher temperature for more creative replies
+                    "response_format": {"type": "json_object"},
                 },
                 timeout=self.config.timeout,
             )
@@ -409,7 +401,7 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
             result = response.json()
 
             # Parse LLM response
-            response_json = result.get("response", "")
+            response_json = result["choices"][0]["message"]["content"]
             response_data = json.loads(response_json)
 
             # Extract replies
@@ -436,13 +428,13 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
 
         except requests.exceptions.Timeout:
             logger.error(
-                f"Ollama request timed out after {self.config.timeout}s "
+                f"LLM request timed out after {self.config.timeout}s "
                 f"generating replies for message {message.id}"
             )
             raise
         except requests.exceptions.RequestException as e:
             logger.error(
-                f"Ollama API error generating replies for message {message.id}: {e}"
+                f"LLM API error generating replies for message {message.id}: {e}"
             )
             raise
         except json.JSONDecodeError as e:

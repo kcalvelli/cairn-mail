@@ -1,8 +1,8 @@
 """Action agent for processing action tags via mcp-gateway.
 
 When users add action tags (e.g., "add-contact", "create-reminder") to emails,
-this agent extracts relevant data using Ollama and executes the corresponding
-MCP tool via mcp-gateway's REST API.
+this agent extracts relevant data using an OpenAI-compatible LLM API and executes
+the corresponding MCP tool via mcp-gateway's REST API.
 """
 
 import calendar
@@ -32,9 +32,9 @@ class ActionAgent:
         database: Database,
         gateway: GatewayClient,
         actions: Dict[str, ActionDefinition],
-        ollama_endpoint: str = "http://localhost:11434",
-        ollama_model: str = "llama3.2",
-        ollama_timeout: int = 60,
+        ai_endpoint: str = "http://localhost:18789",
+        ai_model: str = "claude-sonnet-4-20250514",
+        ai_timeout: int = 60,
     ):
         """Initialize action agent.
 
@@ -42,16 +42,16 @@ class ActionAgent:
             database: Database instance
             gateway: GatewayClient instance for mcp-gateway communication
             actions: Dict of action name -> ActionDefinition
-            ollama_endpoint: Ollama API endpoint
-            ollama_model: Model to use for data extraction
-            ollama_timeout: Timeout for Ollama requests
+            ai_endpoint: OpenAI-compatible API endpoint
+            ai_model: Model name for the API
+            ai_timeout: Timeout for LLM requests
         """
         self.db = database
         self.gateway = gateway
         self.actions = actions
-        self.ollama_endpoint = ollama_endpoint
-        self.ollama_model = ollama_model
-        self.ollama_timeout = ollama_timeout
+        self.ai_endpoint = ai_endpoint
+        self.ai_model = ai_model
+        self.ai_timeout = ai_timeout
 
     def get_action_tag_names(self) -> List[str]:
         """Get list of enabled action tag names.
@@ -68,7 +68,7 @@ class ActionAgent:
     ) -> Dict[str, int]:
         """Process pending action tags for an account.
 
-        Finds messages with action tags, extracts data via Ollama,
+        Finds messages with action tags, extracts data via LLM,
         and calls the corresponding MCP tool via mcp-gateway.
 
         Args:
@@ -198,7 +198,7 @@ class ActionAgent:
             )
             return "skipped"
 
-        # Extract data from email using Ollama
+        # Extract data from email using LLM
         extracted_data = None
         try:
             extracted_data = self._extract_data(message, action)
@@ -298,9 +298,9 @@ class ActionAgent:
         message: Message,
         action: ActionDefinition,
     ) -> Dict[str, Any]:
-        """Extract structured data from an email using Ollama.
+        """Extract structured data from an email using the LLM API.
 
-        Uses the action's extraction prompt to instruct Ollama on what
+        Uses the action's extraction prompt to instruct the LLM on what
         data to extract from the email content.
 
         Args:
@@ -312,7 +312,7 @@ class ActionAgent:
 
         Raises:
             ValueError: If extraction returns invalid JSON
-            requests.RequestException: If Ollama is unreachable
+            requests.RequestException: If the LLM API is unreachable
         """
         if not action.extraction_prompt:
             # No extraction prompt = no data to extract, just use defaults
@@ -332,30 +332,25 @@ class ActionAgent:
             current_date=now.strftime("%Y-%m-%d %A"),  # e.g. "2026-01-29 Thursday"
         )
 
-        # Call Ollama
         response = requests.post(
-            f"{self.ollama_endpoint}/api/generate",
+            f"{self.ai_endpoint}/v1/chat/completions",
             json={
-                "model": self.ollama_model,
-                "prompt": prompt,
-                "format": "json",
-                "stream": False,
-                "keep_alive": 0,  # Unload model after request to free VRAM
-                "options": {
-                    "temperature": 0.1,  # Low temperature for structured extraction
-                },
+                "model": self.ai_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,  # Low temperature for structured extraction
+                "response_format": {"type": "json_object"},
             },
-            timeout=self.ollama_timeout,
+            timeout=self.ai_timeout,
         )
         response.raise_for_status()
 
         result = response.json()
-        response_text = result.get("response", "")
+        response_text = result["choices"][0]["message"]["content"]
 
         try:
             extracted = json.loads(response_text)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Ollama returned invalid JSON: {e}\nResponse: {response_text[:200]}")
+            raise ValueError(f"LLM returned invalid JSON: {e}\nResponse: {response_text[:200]}")
 
         if not isinstance(extracted, dict):
             raise ValueError(f"Expected dict from extraction, got {type(extracted).__name__}")
