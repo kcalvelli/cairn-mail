@@ -30,9 +30,6 @@ dependencies = [
     "httpx>=0.25",
     "requests>=2.31",
 
-    # AI/LLM
-    "ollama>=0.1.0",
-
     # CLI
     "click>=8.1",
     "rich>=13.0",  # Beautiful CLI output
