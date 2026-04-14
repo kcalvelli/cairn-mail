@@ -222,6 +222,11 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
 
             # Parse LLM response
             classification_json = result["choices"][0]["message"]["content"]
+            if not classification_json:
+                logger.warning(
+                    f"LLM returned empty content for message {message.id[:8]}, "
+                    f"full response: {json.dumps(result)[:500]}"
+                )
             classification_data = json.loads(classification_json)
 
             # Validate and normalize
