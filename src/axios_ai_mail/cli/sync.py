@@ -21,6 +21,32 @@ console = Console()
 sync_app = typer.Typer(help="Email synchronization commands")
 logger = logging.getLogger(__name__)
 
+# Global sync cycle counter (increments each time the sync command runs)
+_sync_cycle: int = 0
+
+
+def _should_skip_sync(consecutive_empty: int, cycle: int) -> bool:
+    """Decide whether to skip syncing an account based on adaptive backoff.
+
+    Backoff schedule:
+        0-2 consecutive empty syncs: sync every cycle
+        3-5 consecutive empty syncs: sync every other cycle
+        6+  consecutive empty syncs: sync every 4th cycle
+
+    Args:
+        consecutive_empty: Number of consecutive syncs with no new messages.
+        cycle: Current global sync cycle counter.
+
+    Returns:
+        True if this account should be skipped on the current cycle.
+    """
+    if consecutive_empty <= 2:
+        return False
+    elif consecutive_empty <= 5:
+        return cycle % 2 != 0
+    else:
+        return cycle % 4 != 0
+
 
 def _create_ai_config(config: dict) -> AIConfig:
     """Create AIConfig from loaded configuration.
@@ -117,9 +143,26 @@ def sync_run(
         console.print("\nAdd accounts to your home.nix configuration and run 'home-manager switch'")
         raise typer.Exit(0)
 
+    # Increment global sync cycle counter for adaptive backoff
+    global _sync_cycle
+    _sync_cycle += 1
+
     # Sync each account
     results = []
     for db_account in accounts:
+        # Adaptive backoff: skip accounts with no recent activity
+        consecutive_empty = db.get_consecutive_empty_syncs(db_account.id)
+        if _should_skip_sync(consecutive_empty, _sync_cycle):
+            logger.info(
+                f"Skipping {db_account.email}: {consecutive_empty} consecutive "
+                f"empty syncs (cycle {_sync_cycle})"
+            )
+            console.print(
+                f"\n[dim]Skipping {db_account.email} "
+                f"({consecutive_empty} empty syncs, backoff)[/dim]"
+            )
+            continue
+
         console.print(f"\n[bold]Syncing account: {db_account.email}[/bold]")
 
         # Initialize provider using factory pattern
@@ -153,6 +196,12 @@ def sync_run(
             # Run sync
             result = sync_engine.sync(max_messages=max_messages)
             results.append(result)
+
+            # Update adaptive backoff counter
+            if result.messages_fetched == 0:
+                db.increment_empty_syncs(db_account.id)
+            else:
+                db.reset_empty_syncs(db_account.id)
 
             # Send push notifications for new messages (even if PWA is closed)
             if result.new_messages:

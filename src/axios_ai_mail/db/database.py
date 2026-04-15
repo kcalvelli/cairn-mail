@@ -195,6 +195,28 @@ class Database:
             account = session.get(Account, account_id)
             return account.last_sync if account else None
 
+    def get_consecutive_empty_syncs(self, account_id: str) -> int:
+        """Get the consecutive empty sync count for an account."""
+        with self.session() as session:
+            account = session.get(Account, account_id)
+            return account.consecutive_empty_syncs if account else 0
+
+    def increment_empty_syncs(self, account_id: str) -> None:
+        """Increment the consecutive empty sync counter for an account."""
+        with self.session() as session:
+            account = session.get(Account, account_id)
+            if account:
+                account.consecutive_empty_syncs += 1
+                session.commit()
+
+    def reset_empty_syncs(self, account_id: str) -> None:
+        """Reset the consecutive empty sync counter to zero."""
+        with self.session() as session:
+            account = session.get(Account, account_id)
+            if account:
+                account.consecutive_empty_syncs = 0
+                session.commit()
+
     def delete_account(self, account_id: str) -> bool:
         """Delete an account and cascade to all of its related rows.
 
@@ -393,6 +415,17 @@ class Database:
                 session.commit()
                 return True
             return False
+
+    def get_message_ids_by_imap_folder(self, account_id: str, imap_folder: str) -> set:
+        """Get all message IDs stored for a given account and IMAP folder."""
+        with self.session() as session:
+            result = session.execute(
+                select(Message.id).where(
+                    Message.account_id == account_id,
+                    Message.imap_folder == imap_folder,
+                )
+            ).scalars().all()
+            return set(result)
 
     def query_messages(
         self,

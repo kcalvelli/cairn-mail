@@ -46,6 +46,7 @@ class SyncResult:
     new_messages: List[NewMessageInfo] = None
     pending_ops_processed: int = 0
     pending_ops_failed: int = 0
+    messages_purged: int = 0
     actions_processed: int = 0
     actions_succeeded: int = 0
     actions_failed: int = 0
@@ -67,6 +68,7 @@ class SyncResult:
             f"fetched={self.messages_fetched}, "
             f"classified={self.messages_classified}, "
             f"labels_updated={self.labels_updated}, "
+            f"purged={self.messages_purged}, "
             f"pending_ops={self.pending_ops_processed}/{self.pending_ops_processed + self.pending_ops_failed}, "
             f"actions={self.actions_succeeded}/{self.actions_processed}, "
             f"errors={len(self.errors)}, "
@@ -126,6 +128,7 @@ class SyncEngine:
         labels_updated = 0
         pending_ops_processed = 0
         pending_ops_failed = 0
+        messages_purged = 0
         actions_processed = 0
         actions_succeeded = 0
         actions_failed = 0
@@ -202,7 +205,32 @@ class SyncEngine:
                     logger.error(error_msg)
                     errors.append(error_msg)
 
-            # 5. Classify unclassified inbox messages (no point tagging sent/trash)
+            # 5. Purge stale messages (provider is authoritative)
+            fetched_ids_by_folder: dict[str, Set[str]] = {}
+            for message in messages:
+                if message.imap_folder:
+                    fetched_ids_by_folder.setdefault(message.imap_folder, set()).add(message.id)
+
+            for imap_folder, fetched_ids in fetched_ids_by_folder.items():
+                try:
+                    stored_ids = self.db.get_message_ids_by_imap_folder(
+                        account_id=self.account_id, imap_folder=imap_folder
+                    )
+                    stale_ids = stored_ids - fetched_ids
+                    for stale_id in stale_ids:
+                        self.db.delete_message(stale_id)
+                        messages_purged += 1
+                    if stale_ids:
+                        logger.info(
+                            f"Purged {len(stale_ids)} stale messages from "
+                            f"{imap_folder} for {self.account_id}"
+                        )
+                except Exception as e:
+                    error_msg = f"Failed to purge stale messages from {imap_folder}: {e}"
+                    logger.error(error_msg)
+                    errors.append(error_msg)
+
+            # 6. Classify unclassified inbox messages (no point tagging sent/trash)
             to_classify = [
                 msg for msg in messages
                 if msg.folder == "inbox" and not self.db.has_classification(msg.id)
@@ -295,6 +323,7 @@ class SyncEngine:
                 new_messages=new_messages,
                 pending_ops_processed=pending_ops_processed,
                 pending_ops_failed=pending_ops_failed,
+                messages_purged=messages_purged,
                 actions_processed=actions_processed,
                 actions_succeeded=actions_succeeded,
                 actions_failed=actions_failed,
@@ -465,8 +494,9 @@ class SyncEngine:
 
         try:
             # Get all messages for this account
-            messages = self.db.query_messages(account_id=self.account_id, limit=max_messages or 10000)
-            logger.info(f"Reclassifying {len(messages)} messages")
+            all_messages = self.db.query_messages(account_id=self.account_id, limit=max_messages or 10000)
+            messages = [m for m in all_messages if m.folder == "inbox"]
+            logger.info(f"Reclassifying {len(messages)} inbox messages (skipped {len(all_messages) - len(messages)} non-inbox)")
 
             for db_message in messages:
                 try:

@@ -68,6 +68,7 @@ class Account(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     provider: Mapped[str] = mapped_column(String(50), nullable=False)  # gmail, imap, outlook
     last_sync: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    consecutive_empty_syncs: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     settings: Mapped[Dict] = mapped_column(JSON, nullable=False, default=dict)
 
     # Relationships
