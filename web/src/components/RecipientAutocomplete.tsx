@@ -96,12 +96,28 @@ export default function RecipientAutocomplete({
     [onChange]
   );
 
-  // Handle input change (typing)
+  // Commit whatever's in the input as a recipient
+  const commitInput = useCallback(
+    (raw: string) => {
+      const email = raw.trim().replace(/,+$/, '').trim();
+      if (email.length > 0 && !recipients.map(r => r.toLowerCase()).includes(email.toLowerCase())) {
+        onChange(toEmailString([...recipients, email]));
+      }
+      setInputValue('');
+    },
+    [recipients, onChange]
+  );
+
+  // Handle input change (typing) — commit on comma/semicolon
   const handleInputChange = useCallback(
     (_event: React.SyntheticEvent, newInputValue: string) => {
-      setInputValue(newInputValue);
+      if (newInputValue.includes(',') || newInputValue.includes(';')) {
+        commitInput(newInputValue.replace(/[,;]/g, ''));
+      } else {
+        setInputValue(newInputValue);
+      }
     },
-    []
+    [commitInput]
   );
 
   // Render option with contact details
@@ -185,7 +201,10 @@ export default function RecipientAutocomplete({
           {...params}
           label={label}
           placeholder={recipients.length === 0 ? placeholder : ''}
-          onBlur={onBlur}
+          onBlur={() => {
+            if (inputValue.trim()) commitInput(inputValue);
+            onBlur?.();
+          }}
           InputProps={{
             ...params.InputProps,
             endAdornment: (
