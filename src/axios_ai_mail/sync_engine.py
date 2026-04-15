@@ -202,8 +202,11 @@ class SyncEngine:
                     logger.error(error_msg)
                     errors.append(error_msg)
 
-            # 5. Classify unclassified messages
-            to_classify = [msg for msg in messages if not self.db.has_classification(msg.id)]
+            # 5. Classify unclassified inbox messages (no point tagging sent/trash)
+            to_classify = [
+                msg for msg in messages
+                if msg.folder == "inbox" and not self.db.has_classification(msg.id)
+            ]
             logger.info(f"Classifying {len(to_classify)} messages")
 
             for message in to_classify:
