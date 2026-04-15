@@ -45,9 +45,9 @@ The current user experience has several pain points:
 - **Affected specs**: `configuration` (new), `drafts-management` (new), `settings-ui` (new)
 - **Affected code**:
   - `modules/home-manager/default.nix` - Restructure config schema
-  - `src/axios_ai_mail/config/loader.py` - Handle new config format
-  - `src/axios_ai_mail/ai_classifier.py` - Use expanded tag taxonomy
-  - `src/axios_ai_mail/api/routes/maintenance.py` - New maintenance endpoints
+  - `src/cairn_mail/config/loader.py` - Handle new config format
+  - `src/cairn_mail/ai_classifier.py` - Use expanded tag taxonomy
+  - `src/cairn_mail/api/routes/maintenance.py` - New maintenance endpoints
   - `web/src/pages/Compose.tsx` - Add save draft UX
   - `web/src/pages/SettingsPage.tsx` - Add maintenance panel
   - `web/src/components/Sidebar.tsx` - Add draft count badge

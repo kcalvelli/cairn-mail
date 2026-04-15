@@ -116,7 +116,7 @@ The system SHALL efficiently queue and process messages for classification with 
 
 #### Scenario: Reclassification trigger
 
-- **WHEN** a user runs the `axios-ai-mail reclassify` command
+- **WHEN** a user runs the `cairn-mail reclassify` command
 - **THEN** the system SHALL re-queue all messages for classification
 - **AND** SHALL overwrite previous classifications
 - **AND** SHALL update labels on the provider

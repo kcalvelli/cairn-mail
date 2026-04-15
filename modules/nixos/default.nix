@@ -1,4 +1,4 @@
-# NixOS module for axios-ai-mail
+# NixOS module for cairn-mail
 # Provides the package via overlay and runs system-level services:
 # - Web UI service
 # - Sync service and timer
@@ -8,16 +8,16 @@
 with lib;
 
 let
-  cfg = config.services.axios-ai-mail;
+  cfg = config.services.cairn-mail;
 in {
-  options.services.axios-ai-mail = {
-    enable = mkEnableOption "axios-ai-mail web service";
+  options.services.cairn-mail = {
+    enable = mkEnableOption "cairn-mail web service";
 
     package = mkOption {
       type = types.package;
-      default = pkgs.axios-ai-mail;
-      defaultText = literalExpression "pkgs.axios-ai-mail";
-      description = "The axios-ai-mail package to use.";
+      default = pkgs.cairn-mail;
+      defaultText = literalExpression "pkgs.cairn-mail";
+      description = "The cairn-mail package to use.";
     };
 
     port = mkOption {
@@ -45,7 +45,7 @@ in {
 
     # Tailscale Serve integration
     tailscaleServe = {
-      enable = mkEnableOption "Tailscale Serve to expose axios-ai-mail across your tailnet";
+      enable = mkEnableOption "Tailscale Serve to expose cairn-mail across your tailnet";
 
       httpsPort = mkOption {
         type = types.port;
@@ -87,13 +87,13 @@ in {
     assertions = [
       {
         assertion = cfg.tailscaleServe.enable -> config.services.tailscale.enable;
-        message = "axios-ai-mail: tailscaleServe requires services.tailscale.enable = true";
+        message = "cairn-mail: tailscaleServe requires services.tailscale.enable = true";
       }
     ];
 
     # System service for the web UI
-    systemd.services.axios-ai-mail-web = {
-      description = "axios-ai-mail web UI";
+    systemd.services.cairn-mail-web = {
+      description = "cairn-mail web UI";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
@@ -102,7 +102,7 @@ in {
         Type = "simple";
         User = cfg.user;
         Group = cfg.group;
-        ExecStart = "${cfg.package}/bin/axios-ai-mail web --port ${toString cfg.port}";
+        ExecStart = "${cfg.package}/bin/cairn-mail web --port ${toString cfg.port}";
         Restart = "on-failure";
         RestartSec = "5s";
 
@@ -117,15 +117,15 @@ in {
         ProtectSystem = "strict";
         ProtectHome = "read-only";
         ReadWritePaths = [
-          "/home/${cfg.user}/.local/share/axios-ai-mail"
+          "/home/${cfg.user}/.local/share/cairn-mail"
         ];
         PrivateTmp = true;
       };
     };
 
     # Sync service: fetches new emails and runs AI classification
-    systemd.services.axios-ai-mail-sync = mkIf cfg.sync.enable {
-      description = "axios-ai-mail sync service";
+    systemd.services.cairn-mail-sync = mkIf cfg.sync.enable {
+      description = "cairn-mail sync service";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
 
@@ -133,7 +133,7 @@ in {
         Type = "oneshot";
         User = cfg.user;
         Group = cfg.group;
-        ExecStart = "${cfg.package}/bin/axios-ai-mail sync run";
+        ExecStart = "${cfg.package}/bin/cairn-mail sync run";
 
         # Read config from user's home
         Environment = [
@@ -146,31 +146,31 @@ in {
         ProtectSystem = "strict";
         ProtectHome = "read-only";
         ReadWritePaths = [
-          "/home/${cfg.user}/.local/share/axios-ai-mail"
+          "/home/${cfg.user}/.local/share/cairn-mail"
         ];
         PrivateTmp = true;
       };
     };
 
     # Sync timer: triggers sync service periodically
-    systemd.timers.axios-ai-mail-sync = mkIf cfg.sync.enable {
-      description = "axios-ai-mail sync timer";
+    systemd.timers.cairn-mail-sync = mkIf cfg.sync.enable {
+      description = "cairn-mail sync timer";
       wantedBy = [ "timers.target" ];
 
       timerConfig = {
         OnBootSec = cfg.sync.onBoot;
         OnUnitActiveSec = cfg.sync.frequency;
-        Unit = "axios-ai-mail-sync.service";
+        Unit = "cairn-mail-sync.service";
         Persistent = true;  # Catch up after sleep/hibernate
       };
     };
 
     # Tailscale Serve service: exposes web UI across tailnet via HTTPS
-    systemd.services.axios-ai-mail-tailscale-serve = mkIf cfg.tailscaleServe.enable {
-      description = "axios-ai-mail Tailscale Serve (HTTPS proxy)";
-      after = [ "network-online.target" "tailscaled.service" "axios-ai-mail-web.service" ];
+    systemd.services.cairn-mail-tailscale-serve = mkIf cfg.tailscaleServe.enable {
+      description = "cairn-mail Tailscale Serve (HTTPS proxy)";
+      after = [ "network-online.target" "tailscaled.service" "cairn-mail-web.service" ];
       wants = [ "network-online.target" "tailscaled.service" ];
-      requires = [ "axios-ai-mail-web.service" ];
+      requires = [ "cairn-mail-web.service" ];
       wantedBy = [ "multi-user.target" ];
 
       # Wait for Tailscale to be fully connected before starting serve

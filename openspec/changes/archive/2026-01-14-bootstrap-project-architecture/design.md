@@ -1,7 +1,7 @@
-# Design: axios-ai-mail Architecture
+# Design: cairn-mail Architecture
 
 ## Context
-Standard email clients often require highly manual configuration across multiple tools (`isync`, `msmtp`, `notmuch`). `axios-ai-mail` centralizes this into a declarative model and adds local intelligence via LLMs.
+Standard email clients often require highly manual configuration across multiple tools (`isync`, `msmtp`, `notmuch`). `cairn-mail` centralizes this into a declarative model and adds local intelligence via LLMs.
 
 ## Goals
 - Single source of truth for email accounts.

@@ -4,12 +4,12 @@
 
 ### Requirement: Application displays logo in topbar
 
-The topbar MUST display the axios-ai-mail logo for brand identity.
+The topbar MUST display the cairn-mail logo for brand identity.
 
 #### Scenario: Logo is visible in topbar
 Given: The user views any page in the application
 When: They look at the topbar
-Then: The axios-ai-mail logo is visible on the left side
+Then: The cairn-mail logo is visible on the left side
 
 #### Scenario: Logo links to home
 Given: The logo is displayed in the topbar
@@ -19,7 +19,7 @@ Then: They are navigated to the home page (/)
 #### Scenario: Logo has alt text
 Given: The logo is displayed
 When: A screen reader reads the page
-Then: The logo has appropriate alt text "Axios AI Mail"
+Then: The logo has appropriate alt text "Cairn AI Mail"
 
 #### Scenario: Logo adapts to theme
 Given: Either light or dark theme is active

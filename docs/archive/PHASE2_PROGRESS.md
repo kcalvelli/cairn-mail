@@ -15,16 +15,16 @@
 - ✅ Error handling and logging
 
 **Files Created:**
-- `src/axios_ai_mail/api/__init__.py`
-- `src/axios_ai_mail/api/main.py`
-- `src/axios_ai_mail/api/models.py`
-- `src/axios_ai_mail/api/websocket.py`
-- `src/axios_ai_mail/api/routes/__init__.py`
-- `src/axios_ai_mail/api/routes/messages.py`
-- `src/axios_ai_mail/api/routes/accounts.py`
-- `src/axios_ai_mail/api/routes/stats.py`
-- `src/axios_ai_mail/api/routes/sync.py`
-- `src/axios_ai_mail/cli/web.py`
+- `src/cairn_mail/api/__init__.py`
+- `src/cairn_mail/api/main.py`
+- `src/cairn_mail/api/models.py`
+- `src/cairn_mail/api/websocket.py`
+- `src/cairn_mail/api/routes/__init__.py`
+- `src/cairn_mail/api/routes/messages.py`
+- `src/cairn_mail/api/routes/accounts.py`
+- `src/cairn_mail/api/routes/stats.py`
+- `src/cairn_mail/api/routes/sync.py`
+- `src/cairn_mail/cli/web.py`
 
 #### 2. Frontend Project Setup (70% Complete)
 - ✅ Vite + React + TypeScript configuration
@@ -34,7 +34,7 @@
 - ✅ Vite config with API proxy
 - ✅ MUI theme with Material Design
 - ✅ TypeScript types for API
-- ✅ Axios API client
+- ✅ Cairn API client
 - ⏳ React components (in progress)
 - ⏳ React Query hooks (pending)
 - ⏳ Zustand store (pending)
@@ -117,7 +117,7 @@ The backend is **fully functional** and ready to test:
 
 ```bash
 # Start the API server (once rebuilt)
-axios-ai-mail web --port 8080
+cairn-mail web --port 8080
 
 # Test endpoints
 curl http://localhost:8080/api/health

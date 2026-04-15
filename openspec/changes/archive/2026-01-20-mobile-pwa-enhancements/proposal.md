@@ -69,7 +69,7 @@ Quick actions from home screen long-press:
 
 ### 4. Share Target (Receive Shared Content)
 
-Allow users to share text/links to axiOS Mail for composing:
+Allow users to share text/links to Cairn Mail for composing:
 
 ```json
 "share_target": {
@@ -112,10 +112,10 @@ Queue operations when offline, sync when connection restored:
   - `web/src/hooks/useNotifications.ts` - Push subscription
   - `web/vite.config.ts` - Manifest shortcuts/share_target
   - `web/src/service-worker.ts` - Push/sync handlers (new)
-  - `src/axios_ai_mail/api/` - Push subscription endpoints (backend)
-  - `src/axios_ai_mail/api/routes/messages.py` - Sync read state to provider (defect fix)
-  - `src/axios_ai_mail/providers/implementations/gmail.py` - Add modify labels method
-  - `src/axios_ai_mail/providers/implementations/imap.py` - Add STORE flags method
+  - `src/cairn_mail/api/` - Push subscription endpoints (backend)
+  - `src/cairn_mail/api/routes/messages.py` - Sync read state to provider (defect fix)
+  - `src/cairn_mail/providers/implementations/gmail.py` - Add modify labels method
+  - `src/cairn_mail/providers/implementations/imap.py` - Add STORE flags method
 
 - **New dependencies:** None (web-push is backend only)
 

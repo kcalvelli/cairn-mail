@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Tailscale Serve Integration
-The NixOS module SHALL provide an optional `tailscaleServe` configuration block that exposes the axios-ai-mail web service across the user's Tailscale network via HTTPS.
+The NixOS module SHALL provide an optional `tailscaleServe` configuration block that exposes the cairn-mail web service across the user's Tailscale network via HTTPS.
 
 The integration SHALL:
 - Be disabled by default (opt-in)
@@ -12,8 +12,8 @@ The integration SHALL:
 
 #### Scenario: User enables Tailscale Serve with defaults
 - **GIVEN** the user has `services.tailscale.enable = true`
-- **WHEN** the user sets `services.axios-ai-mail.tailscaleServe.enable = true`
-- **THEN** the system creates a systemd service `axios-ai-mail-tailscale-serve`
+- **WHEN** the user sets `services.cairn-mail.tailscaleServe.enable = true`
+- **THEN** the system creates a systemd service `cairn-mail-tailscale-serve`
 - **AND** the service exposes `https://{hostname}.{tailnet}:8443` proxying to `localhost:{webPort}`
 
 #### Scenario: User customizes HTTPS port
@@ -29,7 +29,7 @@ The integration SHALL:
 
 #### Scenario: Tailscale service not enabled
 - **GIVEN** `services.tailscale.enable` is not set or false
-- **WHEN** the user sets `services.axios-ai-mail.tailscaleServe.enable = true`
+- **WHEN** the user sets `services.cairn-mail.tailscaleServe.enable = true`
 - **THEN** NixOS evaluation fails with an assertion error explaining that Tailscale must be enabled
 
 #### Scenario: Service cleanup on stop
@@ -49,10 +49,10 @@ The sync service SHALL:
 - Use `Persistent=true` to catch up after sleep/hibernate
 
 #### Scenario: Sync service runs periodically
-- **GIVEN** `services.axios-ai-mail.enable = true`
-- **AND** `services.axios-ai-mail.sync.enable = true` (default)
+- **GIVEN** `services.cairn-mail.enable = true`
+- **AND** `services.cairn-mail.sync.enable = true` (default)
 - **WHEN** the system is running
-- **THEN** the sync timer triggers `axios-ai-mail-sync.service` every 5 minutes (default)
+- **THEN** the sync timer triggers `cairn-mail-sync.service` every 5 minutes (default)
 - **AND** the service runs as the configured `user`
 
 #### Scenario: User customizes sync frequency
@@ -67,8 +67,8 @@ The sync service SHALL:
 - **AND** subsequent syncs occur at the configured frequency
 
 #### Scenario: User disables sync service
-- **GIVEN** `services.axios-ai-mail.enable = true`
-- **WHEN** the user sets `services.axios-ai-mail.sync.enable = false`
+- **GIVEN** `services.cairn-mail.enable = true`
+- **WHEN** the user sets `services.cairn-mail.sync.enable = false`
 - **THEN** no sync service or timer is created
 - **AND** the user can run manual syncs via CLI
 
@@ -82,15 +82,15 @@ The sync service SHALL:
 
 ### Requirement: Home-Manager Sync Service
 **Reason**: Sync service moved to NixOS module for consistency with web service
-**Migration**: Users must move `programs.axios-ai-mail.sync.*` options to `services.axios-ai-mail.sync.*`
+**Migration**: Users must move `programs.cairn-mail.sync.*` options to `services.cairn-mail.sync.*`
 
 The home-manager module SHALL NOT define:
-- `systemd.user.services.axios-ai-mail-sync`
-- `systemd.user.timers.axios-ai-mail-sync`
-- `programs.axios-ai-mail.sync` option set
+- `systemd.user.services.cairn-mail-sync`
+- `systemd.user.timers.cairn-mail-sync`
+- `programs.cairn-mail.sync` option set
 
 #### Scenario: Home-manager module without sync
-- **GIVEN** a user has `programs.axios-ai-mail.enable = true`
+- **GIVEN** a user has `programs.cairn-mail.enable = true`
 - **WHEN** the home-manager configuration is evaluated
 - **THEN** no sync service or timer is created at the user level
-- **AND** the `sync` option is not available in `programs.axios-ai-mail`
+- **AND** the `sync` option is not available in `programs.cairn-mail`

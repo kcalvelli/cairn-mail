@@ -15,7 +15,7 @@ The current clear trash functionality blocks the entire UI while permanently del
 
 - Affected specs: `sync-engine` (extending pending operations to support `permanent_delete`)
 - Affected code:
-  - `src/axios_ai_mail/api/routes/messages.py` - `clear_trash` endpoint
-  - `src/axios_ai_mail/sync_engine.py` - process `permanent_delete` pending operations
+  - `src/cairn_mail/api/routes/messages.py` - `clear_trash` endpoint
+  - `src/cairn_mail/sync_engine.py` - process `permanent_delete` pending operations
   - `web/src/components/MessageList.tsx` - update confirmation dialog feedback
   - `web/src/hooks/useMessages.ts` - update `useClearTrash` success handling

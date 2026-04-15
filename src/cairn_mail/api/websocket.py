@@ -219,7 +219,7 @@ async def websocket_endpoint(websocket: WebSocket):
         # Send welcome message
         await manager.send_personal_message({
             "type": "connected",
-            "message": "Connected to axios-ai-mail WebSocket",
+            "message": "Connected to cairn-mail WebSocket",
             "timestamp": datetime.utcnow().isoformat(),
         }, websocket)
 

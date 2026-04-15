@@ -1,11 +1,11 @@
 # CLI Reference
 
-Complete reference for the `axios-ai-mail` command-line interface.
+Complete reference for the `cairn-mail` command-line interface.
 
 ## Overview
 
 ```bash
-axios-ai-mail [OPTIONS] COMMAND [ARGS]
+cairn-mail [OPTIONS] COMMAND [ARGS]
 ```
 
 **Global Options:**
@@ -20,7 +20,7 @@ axios-ai-mail [OPTIONS] COMMAND [ARGS]
 Account maintenance and diagnostics.
 
 ```bash
-axios-ai-mail accounts COMMAND
+cairn-mail accounts COMMAND
 ```
 
 #### accounts list
@@ -28,7 +28,7 @@ axios-ai-mail accounts COMMAND
 List all accounts with their status (active, orphaned, or new).
 
 ```bash
-axios-ai-mail accounts list
+cairn-mail accounts list
 ```
 
 - **Active**: Defined in Nix config and exists in database
@@ -40,13 +40,13 @@ axios-ai-mail accounts list
 Test connection and authentication for an account. Useful for diagnosing sync issues.
 
 ```bash
-axios-ai-mail accounts check ACCOUNT_ID [-v|--verbose]
+cairn-mail accounts check ACCOUNT_ID [-v|--verbose]
 ```
 
 **Example:**
 ```bash
-axios-ai-mail accounts check companies
-axios-ai-mail accounts check companies --verbose
+cairn-mail accounts check companies
+cairn-mail accounts check companies --verbose
 ```
 
 **Tests performed:**
@@ -62,16 +62,16 @@ axios-ai-mail accounts check companies --verbose
 Show detailed statistics for accounts.
 
 ```bash
-axios-ai-mail accounts stats [ACCOUNT_ID]
+cairn-mail accounts stats [ACCOUNT_ID]
 ```
 
 **Examples:**
 ```bash
 # Stats for all accounts
-axios-ai-mail accounts stats
+cairn-mail accounts stats
 
 # Stats for specific account
-axios-ai-mail accounts stats personal
+cairn-mail accounts stats personal
 ```
 
 #### accounts cleanup
@@ -79,7 +79,7 @@ axios-ai-mail accounts stats personal
 Remove orphaned accounts and their messages.
 
 ```bash
-axios-ai-mail accounts cleanup [--dry-run] [--force]
+cairn-mail accounts cleanup [--dry-run] [--force]
 ```
 
 **Options:**
@@ -91,12 +91,12 @@ axios-ai-mail accounts cleanup [--dry-run] [--force]
 Migrate messages from one account to another. Useful when renaming accounts.
 
 ```bash
-axios-ai-mail accounts migrate SOURCE DEST [--dry-run]
+cairn-mail accounts migrate SOURCE DEST [--dry-run]
 ```
 
 **Example:**
 ```bash
-axios-ai-mail accounts migrate personal gmail
+cairn-mail accounts migrate personal gmail
 ```
 
 #### accounts delete
@@ -104,7 +104,7 @@ axios-ai-mail accounts migrate personal gmail
 Delete an account and optionally its messages.
 
 ```bash
-axios-ai-mail accounts delete ACCOUNT_ID [--keep-messages] [--force]
+cairn-mail accounts delete ACCOUNT_ID [--keep-messages] [--force]
 ```
 
 **Options:**
@@ -118,7 +118,7 @@ axios-ai-mail accounts delete ACCOUNT_ID [--keep-messages] [--force]
 Authentication setup for email accounts.
 
 ```bash
-axios-ai-mail auth COMMAND
+cairn-mail auth COMMAND
 ```
 
 #### auth setup
@@ -126,7 +126,7 @@ axios-ai-mail auth COMMAND
 Interactive account setup wizard. Detects accounts from your Nix config.
 
 ```bash
-axios-ai-mail auth setup
+cairn-mail auth setup
 ```
 
 This is the recommended way to set up authentication for new accounts.
@@ -136,12 +136,12 @@ This is the recommended way to set up authentication for new accounts.
 Set up Gmail OAuth2 authentication.
 
 ```bash
-axios-ai-mail auth gmail --account ACCOUNT_ID
+cairn-mail auth gmail --account ACCOUNT_ID
 ```
 
 **Example:**
 ```bash
-axios-ai-mail auth gmail --account personal
+cairn-mail auth gmail --account personal
 ```
 
 **Process:**
@@ -154,7 +154,7 @@ axios-ai-mail auth gmail --account personal
 Set up IMAP password authentication.
 
 ```bash
-axios-ai-mail auth setup-imap --email EMAIL [OPTIONS]
+cairn-mail auth setup-imap --email EMAIL [OPTIONS]
 ```
 
 **Options:**
@@ -164,7 +164,7 @@ axios-ai-mail auth setup-imap --email EMAIL [OPTIONS]
 
 **Example:**
 ```bash
-axios-ai-mail auth setup-imap --email user@fastmail.com
+cairn-mail auth setup-imap --email user@fastmail.com
 ```
 
 **Process:**
@@ -180,7 +180,7 @@ axios-ai-mail auth setup-imap --email user@fastmail.com
 Email synchronization commands.
 
 ```bash
-axios-ai-mail sync COMMAND
+cairn-mail sync COMMAND
 ```
 
 #### sync run
@@ -188,7 +188,7 @@ axios-ai-mail sync COMMAND
 Manually trigger email sync for one or all accounts.
 
 ```bash
-axios-ai-mail sync run [--account ACCOUNT_ID] [--max N]
+cairn-mail sync run [--account ACCOUNT_ID] [--max N]
 ```
 
 **Options:**
@@ -198,10 +198,10 @@ axios-ai-mail sync run [--account ACCOUNT_ID] [--max N]
 **Examples:**
 ```bash
 # Sync all accounts
-axios-ai-mail sync run
+cairn-mail sync run
 
 # Sync specific account with more messages
-axios-ai-mail sync run --account personal --max 200
+cairn-mail sync run --account personal --max 200
 ```
 
 #### sync reclassify
@@ -209,7 +209,7 @@ axios-ai-mail sync run --account personal --max 200
 Reclassify all messages for an account using the AI classifier.
 
 ```bash
-axios-ai-mail sync reclassify ACCOUNT_ID [--max N] [--dry-run]
+cairn-mail sync reclassify ACCOUNT_ID [--max N] [--dry-run]
 ```
 
 **Options:**
@@ -218,7 +218,7 @@ axios-ai-mail sync reclassify ACCOUNT_ID [--max N] [--dry-run]
 
 **Example:**
 ```bash
-axios-ai-mail sync reclassify personal --max 50
+cairn-mail sync reclassify personal --max 50
 ```
 
 ---
@@ -228,11 +228,11 @@ axios-ai-mail sync reclassify personal --max 50
 View sync status and statistics.
 
 ```bash
-axios-ai-mail status [--db PATH]
+cairn-mail status [--db PATH]
 ```
 
 **Options:**
-- `--db` - Database path (default: `~/.local/share/axios-ai-mail/mail.db`)
+- `--db` - Database path (default: `~/.local/share/cairn-mail/mail.db`)
 
 **Output includes:**
 - Account list with last sync times
@@ -248,7 +248,7 @@ axios-ai-mail status [--db PATH]
 Start the web UI server.
 
 ```bash
-axios-ai-mail web [OPTIONS]
+cairn-mail web [OPTIONS]
 ```
 
 **Options:**
@@ -259,13 +259,13 @@ axios-ai-mail web [OPTIONS]
 **Examples:**
 ```bash
 # Start on default port
-axios-ai-mail web
+cairn-mail web
 
 # Start on custom port
-axios-ai-mail web --port 3000
+cairn-mail web --port 3000
 
 # Development mode with auto-reload
-axios-ai-mail web --reload
+cairn-mail web --reload
 ```
 
 **Note:** The web server is typically managed by the NixOS/systemd service rather than run manually.
@@ -278,26 +278,26 @@ axios-ai-mail web --reload
 
 ```bash
 # 1. Set up authentication for accounts defined in Nix config
-axios-ai-mail auth setup
+cairn-mail auth setup
 
 # 2. Run initial sync
-axios-ai-mail sync run --max 200
+cairn-mail sync run --max 200
 
 # 3. Check status
-axios-ai-mail status
+cairn-mail status
 ```
 
 ### Troubleshooting an Account
 
 ```bash
 # 1. Check account connection
-axios-ai-mail accounts check myaccount --verbose
+cairn-mail accounts check myaccount --verbose
 
 # 2. If working, try manual sync
-axios-ai-mail sync run --account myaccount
+cairn-mail sync run --account myaccount
 
 # 3. Check for errors in logs
-journalctl -u axios-ai-mail-web -f
+journalctl -u cairn-mail-web -f
 ```
 
 ### Rename an Account
@@ -307,17 +307,17 @@ journalctl -u axios-ai-mail-web -f
 # 2. Rebuild: sudo nixos-rebuild switch
 
 # 3. Migrate messages from old to new
-axios-ai-mail accounts migrate old_name new_name
+cairn-mail accounts migrate old_name new_name
 
 # 4. Clean up orphaned account
-axios-ai-mail accounts cleanup
+cairn-mail accounts cleanup
 ```
 
 ### Re-classify Messages After Config Change
 
 ```bash
 # After updating custom tags in Nix config
-axios-ai-mail sync reclassify personal --max 500
+cairn-mail sync reclassify personal --max 500
 ```
 
 ---
@@ -326,8 +326,8 @@ axios-ai-mail sync reclassify personal --max 500
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `AXIOS_AI_MAIL_DB` | Database file path | `~/.local/share/axios-ai-mail/mail.db` |
-| `AXIOS_AI_MAIL_CONFIG` | Config file path | `~/.config/axios-ai-mail/config.yaml` |
+| `CAIRN_MAIL_DB` | Database file path | `~/.local/share/cairn-mail/mail.db` |
+| `CAIRN_MAIL_CONFIG` | Config file path | `~/.config/cairn-mail/config.yaml` |
 
 ---
 

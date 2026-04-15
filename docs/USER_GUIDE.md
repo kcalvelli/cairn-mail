@@ -1,6 +1,6 @@
 # User Guide
 
-Complete guide to using axios-ai-mail on desktop and mobile devices.
+Complete guide to using cairn-mail on desktop and mobile devices.
 
 ## Table of Contents
 
@@ -282,7 +282,7 @@ Full keyboard navigation for power users:
 
 ## Theme Switching
 
-axios-ai-mail supports three theme modes:
+cairn-mail supports three theme modes:
 
 ### Light Mode
 Clean, bright interface with light backgrounds.
@@ -306,7 +306,7 @@ For HTML emails, you can toggle "Dark mode on/off" to switch between:
 
 ## PWA Installation
 
-Install axios-ai-mail as a Progressive Web App for a native-like experience.
+Install cairn-mail as a Progressive Web App for a native-like experience.
 
 ### Desktop (Chrome/Brave/Edge)
 
@@ -341,7 +341,7 @@ When installed as a PWA:
 
 ## Offline Behavior
 
-axios-ai-mail handles offline scenarios gracefully:
+cairn-mail handles offline scenarios gracefully:
 
 ### When Offline
 
@@ -366,7 +366,7 @@ The top bar shows connection status:
 
 ## Real-Time Sync (IMAP IDLE)
 
-For IMAP accounts, axios-ai-mail supports near real-time email notifications using IMAP IDLE:
+For IMAP accounts, cairn-mail supports near real-time email notifications using IMAP IDLE:
 
 ### How It Works
 
@@ -391,7 +391,7 @@ For IMAP accounts, axios-ai-mail supports near real-time email notifications usi
 
 ```bash
 # View sync logs to see IDLE activity
-sudo journalctl -u axios-ai-mail-sync.service -f
+sudo journalctl -u cairn-mail-sync.service -f
 ```
 
 ---
@@ -425,17 +425,17 @@ AI-generated quick reply suggestions appear on messages:
 
 ### Service Management
 
-axios-ai-mail runs as system-level services:
+cairn-mail runs as system-level services:
 
 ```bash
 # Check status
-systemctl status axios-ai-mail-web.service
-systemctl status axios-ai-mail-sync.timer
+systemctl status cairn-mail-web.service
+systemctl status cairn-mail-sync.timer
 
 # Trigger manual sync
-sudo systemctl start axios-ai-mail-sync.service
+sudo systemctl start cairn-mail-sync.service
 
 # View logs
-sudo journalctl -u axios-ai-mail-web.service -f
-sudo journalctl -u axios-ai-mail-sync.service -f
+sudo journalctl -u cairn-mail-web.service -f
+sudo journalctl -u cairn-mail-sync.service -f
 ```

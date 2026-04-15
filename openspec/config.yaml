@@ -2,7 +2,7 @@
 # See: https://github.com/openspec-dev/openspec
 
 context: |
-  # Project: axios-ai-mail
+  # Project: cairn-mail
 
   A declarative, web-based email organizer with local AI classification. Provides a privacy-first
   email management experience that leverages local LLMs for intelligent organization, designed for

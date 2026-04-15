@@ -37,10 +37,10 @@ def start_web_server(
         import uvicorn
     except ImportError:
         console.print("[red]Error: uvicorn not installed[/red]")
-        console.print("Install with: pip install 'axios-ai-mail[api]'")
+        console.print("Install with: pip install 'cairn-mail[api]'")
         raise typer.Exit(1)
 
-    console.print("[bold blue]Starting axios-ai-mail web UI[/bold blue]")
+    console.print("[bold blue]Starting cairn-mail web UI[/bold blue]")
     console.print(f"Server: http://{host}:{port}")
     console.print("Press Ctrl+C to stop\n")
 
@@ -48,7 +48,7 @@ def start_web_server(
     # Use "warning" for uvicorn to suppress noisy access logs
     # Our application logs are configured separately in api/main.py
     uvicorn.run(
-        "axios_ai_mail.api.main:app",
+        "cairn_mail.api.main:app",
         host=host,
         port=port,
         reload=reload,

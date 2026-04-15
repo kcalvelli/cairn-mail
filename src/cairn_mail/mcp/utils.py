@@ -42,7 +42,7 @@ def resolve_account(
     if not accounts:
         raise AccountResolutionError(
             "No email accounts configured. Please configure an account in your "
-            "axios-ai-mail settings.",
+            "cairn-mail settings.",
             available_accounts=[],
         )
 

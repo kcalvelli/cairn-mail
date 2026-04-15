@@ -133,7 +133,7 @@ The system SHALL store OAuth tokens and IMAP passwords securely using encrypted 
 
 #### Scenario: systemd-creds integration
 
-- **WHEN** a user configures an account with `oauthTokenFile` pointing to `/run/credentials/axios-ai-mail.service/*`
+- **WHEN** a user configures an account with `oauthTokenFile` pointing to `/run/credentials/cairn-mail.service/*`
 - **THEN** the system SHALL read credentials loaded by systemd's LoadCredential mechanism
 - **AND** SHALL only access credentials available to the service user
 
@@ -157,7 +157,7 @@ The system SHALL authenticate with email providers using OAuth2 with secure toke
 
 #### Scenario: Initial OAuth2 flow
 
-- **WHEN** a user runs the `axios-ai-mail auth setup <provider>` command
+- **WHEN** a user runs the `cairn-mail auth setup <provider>` command
 - **THEN** the system SHALL guide the user through creating an OAuth app in the provider's console
 - **AND** SHALL open a browser for the OAuth authorization flow
 - **AND** SHALL receive the authorization code via callback

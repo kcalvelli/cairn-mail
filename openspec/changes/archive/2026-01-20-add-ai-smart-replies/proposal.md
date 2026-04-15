@@ -15,8 +15,8 @@ Users often need to quickly respond to emails with short, common replies. Manual
 
 - Affected specs: `ai-features` (new capability)
 - Affected code:
-  - `src/axios_ai_mail/api/routes/messages.py` - New endpoint
-  - `src/axios_ai_mail/ai_classifier.py` - New reply generation method (or separate module)
+  - `src/cairn_mail/api/routes/messages.py` - New endpoint
+  - `src/cairn_mail/ai_classifier.py` - New reply generation method (or separate module)
   - `web/src/pages/MessageDetailPage.tsx` - Add SmartReplies component
   - `web/src/pages/Compose.tsx` - Handle `body` query param
   - `web/src/components/SmartReplies.tsx` - New component

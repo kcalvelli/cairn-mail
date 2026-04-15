@@ -30,9 +30,9 @@
   - Build/overlay pywebpush if not in nixpkgs
 
 - [x] 2.2 Add VAPID key configuration to Nix modules
-  - `programs.axios-ai-mail.push.vapidPrivateKeyFile` (path to agenix secret)
-  - `programs.axios-ai-mail.push.vapidPublicKey` (string, safe to store in config)
-  - `programs.axios-ai-mail.push.contactEmail` (mailto: for VAPID claims)
+  - `programs.cairn-mail.push.vapidPrivateKeyFile` (path to agenix secret)
+  - `programs.cairn-mail.push.vapidPublicKey` (string, safe to store in config)
+  - `programs.cairn-mail.push.contactEmail` (mailto: for VAPID claims)
   - Pass values into `config.yaml`
 
 - [x] 2.3 Add `PushSubscription` model to `db/models.py`

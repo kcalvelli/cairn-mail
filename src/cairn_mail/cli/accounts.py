@@ -17,7 +17,7 @@ console = Console()
 
 def get_db() -> Database:
     """Get database instance."""
-    db_path = Path.home() / ".local" / "share" / "axios-ai-mail" / "mail.db"
+    db_path = Path.home() / ".local" / "share" / "cairn-mail" / "mail.db"
     return Database(db_path)
 
 
@@ -91,14 +91,14 @@ def list_accounts() -> None:
     if new_accounts:
         console.print()
         console.print(f"[blue]ℹ Found {len(new_accounts)} new account(s) in config.[/blue]")
-        console.print("  Run [bold]axios-ai-mail sync run[/bold] to sync them.")
+        console.print("  Run [bold]cairn-mail sync run[/bold] to sync them.")
 
     if orphaned:
         console.print()
         console.print(f"[yellow]⚠ Found {len(orphaned)} orphaned account(s).[/yellow]")
-        console.print("  Run [bold]axios-ai-mail accounts cleanup[/bold] to remove them.")
+        console.print("  Run [bold]cairn-mail accounts cleanup[/bold] to remove them.")
         if new_accounts:
-            console.print("  Or run [bold]axios-ai-mail accounts migrate <old> <new>[/bold] to preserve messages.")
+            console.print("  Or run [bold]cairn-mail accounts migrate <old> <new>[/bold] to preserve messages.")
 
 
 @accounts_app.command("cleanup")
@@ -164,7 +164,7 @@ def migrate_account(
     The source account will become orphaned after migration.
 
     Example:
-        axios-ai-mail accounts migrate personal gmail
+        cairn-mail accounts migrate personal gmail
     """
     db = get_db()
 
@@ -178,7 +178,7 @@ def migrate_account(
     dest_account = db.get_account(dest)
     if not dest_account:
         console.print(f"[red]Error: Destination account '{dest}' not found[/red]")
-        console.print("Make sure to sync the new account first: axios-ai-mail sync run")
+        console.print("Make sure to sync the new account first: cairn-mail sync run")
         raise typer.Exit(1)
 
     # Count messages to migrate
@@ -204,7 +204,7 @@ def migrate_account(
     migrated = _migrate_messages(db, source, dest)
     console.print(f"\n[green]✓ Migrated {migrated} message(s) from {source} to {dest}[/green]")
     console.print(f"\nYou can now clean up the orphaned account with:")
-    console.print(f"  [dim]axios-ai-mail accounts cleanup[/dim]")
+    console.print(f"  [dim]cairn-mail accounts cleanup[/dim]")
 
 
 @accounts_app.command("delete")
@@ -263,7 +263,7 @@ def check_account(
     - Message count
 
     Example:
-        axios-ai-mail accounts check companies
+        cairn-mail accounts check companies
     """
     import imaplib
     import socket
@@ -337,7 +337,7 @@ def _check_imap_account(db_account, account_config: dict, verbose: bool) -> None
         cred_path = Path(credential_file)
         if not cred_path.exists():
             console.print(f"[red]✗ Credential file not found: {credential_file}[/red]")
-            console.print("\nRun: [bold]axios-ai-mail auth[/bold] to set up credentials")
+            console.print("\nRun: [bold]cairn-mail auth[/bold] to set up credentials")
             raise typer.Exit(1)
 
         password = Credentials.load_password(credential_file)
@@ -485,7 +485,7 @@ def _check_gmail_account(db_account, account_config: dict, verbose: bool) -> Non
     cred_path = Path(credential_file)
     if not cred_path.exists():
         console.print(f"[red]✗ Credential file not found: {credential_file}[/red]")
-        console.print("\nRun: [bold]axios-ai-mail auth[/bold] to set up OAuth credentials")
+        console.print("\nRun: [bold]cairn-mail auth[/bold] to set up OAuth credentials")
         raise typer.Exit(1)
     console.print(f"[green]✓ Credential file exists: {credential_file}[/green]")
 
@@ -498,7 +498,7 @@ def _check_gmail_account(db_account, account_config: dict, verbose: bool) -> Non
     except Exception as e:
         console.print(f"[red]✗ Gmail API authentication failed: {e}[/red]")
         console.print("\nPossible causes:")
-        console.print("  • OAuth token expired - run 'axios-ai-mail auth' to refresh")
+        console.print("  • OAuth token expired - run 'cairn-mail auth' to refresh")
         console.print("  • Credentials revoked in Google Account settings")
         console.print("  • Network connectivity issues")
         raise typer.Exit(1)

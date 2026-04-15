@@ -111,10 +111,10 @@ If provider state diverges from local:
 ## Impact
 
 - **Affected code:**
-  - `src/axios_ai_mail/db/models.py` - Add PendingOperation model
-  - `src/axios_ai_mail/db/database.py` - Add queue methods
-  - `src/axios_ai_mail/sync_engine.py` - Process queue during sync
-  - `src/axios_ai_mail/api/routes/messages.py` - Queue instead of sync
+  - `src/cairn_mail/db/models.py` - Add PendingOperation model
+  - `src/cairn_mail/db/database.py` - Add queue methods
+  - `src/cairn_mail/sync_engine.py` - Process queue during sync
+  - `src/cairn_mail/api/routes/messages.py` - Queue instead of sync
   - `web/src/api/types.ts` - Add pending operation types (optional)
 
 - **New dependencies:** None

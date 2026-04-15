@@ -27,7 +27,7 @@ interface ThemeContextValue {
 }
 
 // Storage key
-const THEME_KEY = 'axios-theme';
+const THEME_KEY = 'cairn-theme';
 
 // System preference detection
 const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
@@ -62,7 +62,7 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api/],
       },
       manifest: {
-        name: 'Axios AI Mail',
+        name: 'Cairn AI Mail',
         short_name: 'Mail',
         // ... rest of manifest
       }
@@ -125,7 +125,7 @@ Offline:
 
 **Configuration Example:**
 ```nix
-programs.axios-ai-mail.ai = {
+programs.cairn-mail.ai = {
   model = "phi3:mini";  # or "mistral:7b" or "llama3.1:8b"
   endpoint = "http://localhost:11434";
   temperature = 0.3;
@@ -182,7 +182,7 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
 **Visual Hierarchy:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ [Logo] Axios AI Mail              [Theme] [Account]     │  ← Topbar (primary color)
+│ [Logo] Cairn AI Mail              [Theme] [Account]     │  ← Topbar (primary color)
 ├─────────────────┬───────────────────────────────────────┤
 │ Inbox (5)       │                                       │
 │ Sent            │  Message List / Detail                │
@@ -221,7 +221,7 @@ RESPOND WITH ONLY A JSON OBJECT (no markdown, no explanation):
 - Recognizable at small sizes (favicon, PWA icon)
 
 **Initial Design:**
-- Mail envelope icon + "Axios" text
+- Mail envelope icon + "Cairn" text
 - Or just stylized "A" icon
 - Primary brand color with good contrast
 
@@ -284,8 +284,8 @@ UI displays confidence indicator
 web/
 ├── public/
 │   ├── manifest.json          # PWA manifest
-│   ├── axios-ai-mail.png      # Logo 192x192
-│   ├── axios-ai-mail-512.png  # Logo 512x512
+│   ├── cairn-mail.png      # Logo 192x192
+│   ├── cairn-mail-512.png  # Logo 512x512
 │   └── favicon.ico            # Updated favicon
 ├── src/
 │   ├── contexts/
@@ -301,7 +301,7 @@ web/
 └── package.json               # Add vite-plugin-pwa
 
 src/
-└── axios_ai_mail/
+└── cairn_mail/
     ├── ai_classifier.py       # Add confidence extraction
     └── providers/base.py      # Classification.confidence field
 ```

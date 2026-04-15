@@ -1,6 +1,6 @@
 ## Context
 
-axios-ai-mail has a mature tagging system (35 default tags, custom tags, DFSL feedback) and a sync engine that runs every 5 minutes. The broader axios ecosystem includes mcp-gateway (aggregates MCP servers over REST) and mcp-dav (exposes CalDAV/CardDAV as MCP tools). axios-ai-chat already demonstrates the pattern of an agent calling MCP tools via the gateway to take real-world actions.
+cairn-mail has a mature tagging system (35 default tags, custom tags, DFSL feedback) and a sync engine that runs every 5 minutes. The broader cairn ecosystem includes mcp-gateway (aggregates MCP servers over REST) and mcp-dav (exposes CalDAV/CardDAV as MCP tools). cairn-ai-chat already demonstrates the pattern of an agent calling MCP tools via the gateway to take real-world actions.
 
 The action tag framework gives users a simple, familiar interface (tagging) that triggers powerful backend automation (MCP tool calls) without requiring them to interact with AI chat or learn new UIs.
 
@@ -16,7 +16,7 @@ The action tag framework gives users a simple, familiar interface (tagging) that
 
 - **Non-Goals**:
   - Building a full workflow engine (no multi-step chains, no conditionals)
-  - Replacing axios-ai-chat as the primary AI agent interface
+  - Replacing cairn-ai-chat as the primary AI agent interface
   - Direct MCP stdio client (we use mcp-gateway REST API instead)
   - AI-initiated actions (only users assign action tags; AI suggestions are a separate concern in `add-mcp-contacts-client`)
   - Real-time action execution (actions process on sync cycle, not instantly)
@@ -43,7 +43,7 @@ The action agent calls `POST /api/tools/{server}/{tool}` on mcp-gateway rather t
 - mcp-gateway already manages MCP server lifecycle and handles stdio communication
 - REST API is simpler to implement (just HTTP calls vs. JSON-RPC over stdio)
 - Tool discovery via `GET /api/tools` is trivial
-- Consistent with how axios-ai-chat connects to MCP tools
+- Consistent with how cairn-ai-chat connects to MCP tools
 - No new process management or connection pooling needed
 - Works across machines via Tailscale
 
@@ -87,7 +87,7 @@ Failure: "add-contact" tag kept, action_log entry with error
 Built-in actions ship in `config/actions.py`. Users extend via Nix config:
 
 ```nix
-programs.axios-ai-mail.actions = {
+programs.cairn-mail.actions = {
   "add-contact" = {
     description = "Create a contact from this email's sender";
     gateway.server = "dav";
@@ -111,7 +111,7 @@ programs.axios-ai-mail.actions = {
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                         axios-ai-mail                                  │
+│                         cairn-mail                                  │
 │                                                                        │
 │  ┌─────────────┐   ┌──────────────────────────────────────────────┐  │
 │  │  Web UI      │   │  Sync Engine (runs every 5 min)              │  │

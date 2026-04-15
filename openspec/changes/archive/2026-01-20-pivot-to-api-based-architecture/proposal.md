@@ -2,15 +2,15 @@
 
 ## Why
 
-The current notmuch/Maildir architecture has fundamental limitations that prevent axios-ai-mail from being a practical, user-friendly solution:
+The current notmuch/Maildir architecture has fundamental limitations that prevent cairn-mail from being a practical, user-friendly solution:
 
-1. **One-Way Sync Problem**: Tags applied locally via notmuch never sync back to Gmail/IMAP/Outlook, creating a fragmented experience where changes made in axios-ai-mail aren't reflected in the user's primary email client.
+1. **One-Way Sync Problem**: Tags applied locally via notmuch never sync back to Gmail/IMAP/Outlook, creating a fragmented experience where changes made in cairn-mail aren't reflected in the user's primary email client.
 
 2. **Client Ecosystem Limitations**: Notmuch-compatible email clients (aerc, alot, astroid) are niche terminal/desktop apps that most users find unintuitive. The learning curve is steep and the UI/UX is dated.
 
 3. **Maildir is Ancient**: The Maildir format was designed in 1995 and doesn't map well to modern email features like labels, categories, importance markers, or collaborative workflows.
 
-4. **Isolated Experience**: Users must choose between using axios-ai-mail (with AI tags) OR their regular email client (Gmail web, Outlook, mobile apps) - they can't benefit from AI tagging in their normal workflow.
+4. **Isolated Experience**: Users must choose between using cairn-mail (with AI tags) OR their regular email client (Gmail web, Outlook, mobile apps) - they can't benefit from AI tagging in their normal workflow.
 
 5. **Mobile Gap**: No mobile support means users can't access their AI-organized email on phones/tablets where most email reading happens.
 
@@ -149,7 +149,7 @@ We will **completely pivot** the architecture from local Maildir+notmuch to a cl
 This pivot will be successful if:
 
 1. Users can connect their Gmail account and see AI tags appear as labels within 10 minutes
-2. Tags applied by AI in axios-ai-mail sync back to Gmail web/mobile within 1 minute
+2. Tags applied by AI in cairn-mail sync back to Gmail web/mobile within 1 minute
 3. The web UI is intuitive enough for non-technical users to understand and use
 4. At least 3 email providers are supported (Gmail, IMAP, Outlook.com)
 5. OAuth2 setup has clear documentation and helper tools

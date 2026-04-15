@@ -1,5 +1,5 @@
 {
-  "name": "axios-ai-mail-web",
+  "name": "cairn-mail-web",
   "version": "2.0.0",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
     "@tiptap/react": "^2.1.13",
     "@tiptap/starter-kit": "^2.1.13",
     "@types/md5": "^2.3.6",
-    "axios": "^1.6.7",
+    "cairn": "^1.6.7",
     "dompurify": "^3.0.8",
     "idb-keyval": "^6.2.1",
     "md5": "^2.3.0",

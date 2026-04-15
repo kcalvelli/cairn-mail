@@ -5,7 +5,7 @@
 
 ## 2. Backend API - Response Models
 
-- [ ] 2.1 Add `hidden: bool` field to `AccountResponse` model in `src/axios_ai_mail/api/models.py`
+- [ ] 2.1 Add `hidden: bool` field to `AccountResponse` model in `src/cairn_mail/api/models.py`
 
 ## 3. Backend API - Account Endpoints
 

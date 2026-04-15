@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Technical deep-dive into axios-ai-mail's system design.
+Technical deep-dive into cairn-mail's system design.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ Technical deep-dive into axios-ai-mail's system design.
 
 ## System Overview
 
-axios-ai-mail is a layered architecture with clear separation of concerns:
+cairn-mail is a layered architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -611,7 +611,7 @@ function useWebSocket() {
         ▼
 ┌─────────────────┐
 │ ~/.config/      │
-│ axios-ai-mail/  │
+│ cairn-mail/  │
 │ config.yaml     │
 └─────────────────┘
 ```
@@ -626,7 +626,7 @@ class ConfigLoader:
     def load_config(path: Path = None) -> dict:
         """Load config.yaml (JSON format)."""
         if path is None:
-            path = Path.home() / ".config/axios-ai-mail/config.yaml"
+            path = Path.home() / ".config/cairn-mail/config.yaml"
         return json.loads(path.read_text())
 
     @staticmethod
@@ -645,7 +645,7 @@ class ConfigLoader:
 
 ```json
 {
-  "database_path": "~/.local/share/axios-ai-mail/mail.db",
+  "database_path": "~/.local/share/cairn-mail/mail.db",
   "accounts": {
     "personal": {
       "id": "personal",

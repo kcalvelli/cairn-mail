@@ -2,7 +2,7 @@
 
 ## Context
 
-axios-ai-mail has a comprehensive REST API with 60+ endpoints. AI assistants using MCP (Model Context Protocol) need a standardized way to invoke these capabilities. MCP provides a JSON-RPC based protocol for tool discovery and invocation.
+cairn-mail has a comprehensive REST API with 60+ endpoints. AI assistants using MCP (Model Context Protocol) need a standardized way to invoke these capabilities. MCP provides a JSON-RPC based protocol for tool discovery and invocation.
 
 **Constraints:**
 - Must work with local-only deployment (no cloud auth)
@@ -38,13 +38,13 @@ MCP supports multiple transports. We'll use **stdio** (standard input/output) as
                                               │ HTTP localhost
                                               ▼
                                      ┌──────────────────┐
-                                     │  axios-ai-mail   │
+                                     │  cairn-mail   │
                                      │  Web API         │
                                      │  (FastAPI)       │
                                      └──────────────────┘
 ```
 
-The MCP server runs as a subprocess of the AI assistant, communicating via stdio. It then calls the existing axios-ai-mail REST API over localhost.
+The MCP server runs as a subprocess of the AI assistant, communicating via stdio. It then calls the existing cairn-mail REST API over localhost.
 
 ### Alternative Considered: Direct Database Access
 
@@ -59,7 +59,7 @@ The MCP server runs as a subprocess of the AI assistant, communicating via stdio
 ### Module Structure
 
 ```
-src/axios_ai_mail/
+src/cairn_mail/
 ├── mcp/
 │   ├── __init__.py
 │   ├── server.py       # MCP server implementation
@@ -74,7 +74,7 @@ src/axios_ai_mail/
 Create a thin HTTP client that calls the localhost API:
 
 ```python
-class AxiosMailClient:
+class CairnMailClient:
     def __init__(self, base_url: str = "http://localhost:8080"):
         self.base_url = base_url
 
@@ -270,16 +270,16 @@ async def delete_email(
 
 ```bash
 # Start MCP server (stdio mode for AI assistants)
-axios-ai-mail mcp
+cairn-mail mcp
 
 # With custom API URL
-axios-ai-mail mcp --api-url http://localhost:9000
+cairn-mail mcp --api-url http://localhost:9000
 ```
 
 ## NixOS Integration
 
 ```nix
-services.axios-ai-mail = {
+services.cairn-mail = {
   enable = true;
 
   # Optional: Enable MCP server as systemd socket-activated service

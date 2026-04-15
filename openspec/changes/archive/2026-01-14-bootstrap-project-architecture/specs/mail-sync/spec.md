@@ -4,7 +4,7 @@
 The system SHALL synchronize remote IMAP accounts to local Maildir storage using `mbsync`.
 
 #### Scenario: Sync new mail
-- **WHEN** the `axios-mail-sync.service` triggers
+- **WHEN** the `cairn-mail-sync.service` triggers
 - **THEN** it runs `mbsync -a`
 - **AND** it runs `notmuch new` to update the local index
 

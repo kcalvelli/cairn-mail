@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Complete reference for all axios-ai-mail Nix configuration options.
+Complete reference for all cairn-mail Nix configuration options.
 
 ## Table of Contents
 
@@ -22,12 +22,12 @@ Complete reference for all axios-ai-mail Nix configuration options.
 
 ## Architecture Overview
 
-axios-ai-mail uses a **split architecture** with two separate Nix modules:
+cairn-mail uses a **split architecture** with two separate Nix modules:
 
 | Module | Namespace | Level | Purpose |
 |--------|-----------|-------|---------|
-| **NixOS** | `services.axios-ai-mail` | System | Web service, sync timer, Tailscale Serve |
-| **Home-Manager** | `programs.axios-ai-mail` | User | Email accounts, AI settings, config file |
+| **NixOS** | `services.cairn-mail` | System | Web service, sync timer, Tailscale Serve |
+| **Home-Manager** | `programs.cairn-mail` | User | Email accounts, AI settings, config file |
 
 **Why split?**
 - System services need root to bind ports and run reliably
@@ -35,7 +35,7 @@ axios-ai-mail uses a **split architecture** with two separate Nix modules:
 - Proper Nix dependency tracking via overlay
 
 **Required components:**
-1. **Overlay** - Adds `pkgs.axios-ai-mail` to nixpkgs
+1. **Overlay** - Adds `pkgs.cairn-mail` to nixpkgs
 2. **NixOS module** - Runs systemd services
 3. **Home-Manager module** - Generates user config file
 
@@ -43,14 +43,14 @@ axios-ai-mail uses a **split architecture** with two separate Nix modules:
 
 ## NixOS Module (System Services)
 
-Namespace: `services.axios-ai-mail`
+Namespace: `services.cairn-mail`
 
 ### Basic Options
 
 ```nix
-services.axios-ai-mail = {
+services.cairn-mail = {
   enable = true;
-  package = pkgs.axios-ai-mail;  # Default from overlay
+  package = pkgs.cairn-mail;  # Default from overlay
   port = 8080;
   user = "youruser";
   group = "users";
@@ -60,8 +60,8 @@ services.axios-ai-mail = {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `enable` | boolean | `false` | Enable axios-ai-mail services |
-| `package` | package | `pkgs.axios-ai-mail` | Package to use |
+| `enable` | boolean | `false` | Enable cairn-mail services |
+| `package` | package | `pkgs.cairn-mail` | Package to use |
 | `port` | port | `8080` | Web UI port |
 | `user` | string | *required* | User to run as (reads config from their home) |
 | `group` | string | `"users"` | Group to run as |
@@ -72,7 +72,7 @@ services.axios-ai-mail = {
 Configures the periodic email sync service.
 
 ```nix
-services.axios-ai-mail.sync = {
+services.cairn-mail.sync = {
   enable = true;       # Default: true
   frequency = "5m";    # Default: "5m"
   onBoot = "2min";     # Default: "2min"
@@ -92,15 +92,15 @@ services.axios-ai-mail.sync = {
 - `1d` - Daily
 
 **Systemd units created:**
-- `axios-ai-mail-sync.service` - Oneshot sync job
-- `axios-ai-mail-sync.timer` - Periodic trigger
+- `cairn-mail-sync.service` - Oneshot sync job
+- `cairn-mail-sync.timer` - Periodic trigger
 
 ### Tailscale Serve
 
 Exposes the web UI across your Tailscale network via HTTPS.
 
 ```nix
-services.axios-ai-mail.tailscaleServe = {
+services.cairn-mail.tailscaleServe = {
   enable = true;
   httpsPort = 8443;  # Access at https://hostname.tailnet:8443
 };
@@ -123,12 +123,12 @@ Example: `https://myserver.tail12345.ts.net:8443`
 
 ## Home-Manager Module (User Config)
 
-Namespace: `programs.axios-ai-mail`
+Namespace: `programs.cairn-mail`
 
 ### Quick Reference
 
 ```nix
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   accounts = { };    # Email accounts (see below)
@@ -253,7 +253,7 @@ sync = {
 
 ### Gateway & Action Tags
 
-Action tags let you trigger real-world actions from emails (create contacts, calendar events, etc.) via [mcp-gateway](https://github.com/kcalvelli/mcp-gateway) and [axios-dav](https://github.com/kcalvelli/axios-dav). See the full [Action Tags Guide](ACTION_TAGS.md) for setup and usage.
+Action tags let you trigger real-world actions from emails (create contacts, calendar events, etc.) via [mcp-gateway](https://github.com/kcalvelli/mcp-gateway) and [cairn-dav](https://github.com/kcalvelli/cairn-dav). See the full [Action Tags Guide](ACTION_TAGS.md) for setup and usage.
 
 ```nix
 gateway = {
@@ -410,14 +410,14 @@ ai.labelColors = {
 
 ```nix
 # NixOS module
-services.axios-ai-mail = {
+services.cairn-mail = {
   enable = true;
   port = 8080;
   user = "keith";
 };
 
 # Home-manager module
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   accounts.gmail = {
@@ -432,7 +432,7 @@ programs.axios-ai-mail = {
 
 ```nix
 # NixOS module
-services.axios-ai-mail = {
+services.cairn-mail = {
   enable = true;
   port = 8080;
   user = "keith";
@@ -450,7 +450,7 @@ services.axios-ai-mail = {
 };
 
 # Home-manager module
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   ai = {
@@ -512,7 +512,7 @@ programs.axios-ai-mail = {
 For systems with limited RAM/VRAM:
 
 ```nix
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   ai = {
@@ -542,20 +542,20 @@ programs.axios-ai-mail = {
 
 ```bash
 # Web service
-systemctl status axios-ai-mail-web.service
-sudo systemctl restart axios-ai-mail-web.service
-sudo journalctl -u axios-ai-mail-web.service -f
+systemctl status cairn-mail-web.service
+sudo systemctl restart cairn-mail-web.service
+sudo journalctl -u cairn-mail-web.service -f
 
 # Sync timer
-systemctl status axios-ai-mail-sync.timer
-systemctl list-timers axios-ai-mail-sync.timer
+systemctl status cairn-mail-sync.timer
+systemctl list-timers cairn-mail-sync.timer
 
 # Trigger manual sync
-sudo systemctl start axios-ai-mail-sync.service
-sudo journalctl -u axios-ai-mail-sync.service -f
+sudo systemctl start cairn-mail-sync.service
+sudo journalctl -u cairn-mail-sync.service -f
 
 # Tailscale Serve (if enabled)
-systemctl status axios-ai-mail-tailscale-serve.service
+systemctl status cairn-mail-tailscale-serve.service
 tailscale serve status
 ```
 
@@ -564,10 +564,10 @@ tailscale serve status
 To disable the timer but keep manual sync available:
 
 ```nix
-services.axios-ai-mail.sync.enable = false;
+services.cairn-mail.sync.enable = false;
 ```
 
 You can still trigger syncs manually:
 ```bash
-sudo systemctl start axios-ai-mail-sync.service
+sudo systemctl start cairn-mail-sync.service
 ```

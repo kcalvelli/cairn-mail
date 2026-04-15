@@ -1,4 +1,4 @@
-"""FastAPI application for axios-ai-mail web UI."""
+"""FastAPI application for cairn-mail web UI."""
 
 import logging
 import sys
@@ -17,7 +17,7 @@ from .routes.sync import _sync_executor
 from .routes import accounts, actions, attachments, contacts, drafts, feedback, maintenance, messages, push, send, stats, sync, trusted_senders
 from .websocket import router as websocket_router
 
-# Configure logging for the entire axios_ai_mail package
+# Configure logging for the entire cairn_mail package
 # This ensures all our loggers output to stdout (for journalctl)
 logging.basicConfig(
     level=logging.INFO,
@@ -26,13 +26,13 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 # Set our package's logger level
-logging.getLogger("axios_ai_mail").setLevel(logging.INFO)
+logging.getLogger("cairn_mail").setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="axios-ai-mail API",
+    title="cairn-mail API",
     description="REST API for AI-enhanced email workflow",
     version="2.0.0",
 )
@@ -52,7 +52,7 @@ app.add_middleware(
 )
 
 # Initialize database (shared with CLI)
-db_path = Path.home() / ".local/share/axios-ai-mail/mail.db"
+db_path = Path.home() / ".local/share/cairn-mail/mail.db"
 db = Database(db_path)
 logger.info(f"Database initialized at {db_path}")
 
@@ -128,7 +128,7 @@ app.include_router(_system_router, prefix="/api", tags=["system"])
 
 # Serve static files (frontend build) if they exist
 # Try installed package location first, then development location
-# In installed package: axios_ai_mail/web_assets (one level up from api/)
+# In installed package: cairn_mail/web_assets (one level up from api/)
 static_dir = Path(__file__).parent.parent / "web_assets"
 if not static_dir.exists():
     # Try development location

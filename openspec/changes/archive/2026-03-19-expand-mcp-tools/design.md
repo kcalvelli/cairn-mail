@@ -1,8 +1,8 @@
 ## Context
 
-The MCP server (`src/axios_ai_mail/mcp/`) exposes email operations to external AI agents via the Model Context Protocol. It currently has 8 tools covering basic CRUD. An external agent doing mail triage needs tagging, bulk operations, and query tools that the REST API mostly already supports but the MCP layer doesn't expose.
+The MCP server (`src/cairn_mail/mcp/`) exposes email operations to external AI agents via the Model Context Protocol. It currently has 8 tools covering basic CRUD. An external agent doing mail triage needs tagging, bulk operations, and query tools that the REST API mostly already supports but the MCP layer doesn't expose.
 
-The architecture is: **MCP tool → AxiosMailClient method → REST API endpoint → DB**. Five of the six new tools only need the first two layers (client + tool). One (`bulk_update_tags`) also needs a new API endpoint.
+The architecture is: **MCP tool → CairnMailClient method → REST API endpoint → DB**. Five of the six new tools only need the first two layers (client + tool). One (`bulk_update_tags`) also needs a new API endpoint.
 
 ## Goals / Non-Goals
 

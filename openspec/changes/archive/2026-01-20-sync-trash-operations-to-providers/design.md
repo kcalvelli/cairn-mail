@@ -2,7 +2,7 @@
 
 ## Context
 
-Phase 5 implemented folder-based organization and bulk operations in the UI and database, but these changes were not synchronized back to email providers. Users could delete messages in axios-ai-mail but they would still appear in Gmail's webmail, creating confusion and inconsistency.
+Phase 5 implemented folder-based organization and bulk operations in the UI and database, but these changes were not synchronized back to email providers. Users could delete messages in cairn-mail but they would still appear in Gmail's webmail, creating confusion and inconsistency.
 
 **Problem:** How do we sync trash operations (delete, restore, permanent delete) back to providers without sacrificing the reliability of local-first database operations?
 

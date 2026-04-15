@@ -2,7 +2,7 @@
 
 ## Context
 
-axios-ai-mail already uses Ollama for email classification. Smart replies extend this AI capability to generate contextually appropriate response suggestions. The infrastructure (Ollama connection, prompt handling, JSON parsing) is already in place.
+cairn-mail already uses Ollama for email classification. Smart replies extend this AI capability to generate contextually appropriate response suggestions. The infrastructure (Ollama connection, prompt handling, JSON parsing) is already in place.
 
 ## Goals / Non-Goals
 

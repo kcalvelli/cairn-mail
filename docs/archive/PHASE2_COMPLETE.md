@@ -15,14 +15,14 @@ Phase 2 (Web UI with Material Design) has been successfully implemented! The web
 - ✅ **CORS configuration** for localhost development
 
 **Files Created:**
-- `src/axios_ai_mail/api/main.py` - FastAPI app with static file serving
-- `src/axios_ai_mail/api/models.py` - 17 Pydantic models
-- `src/axios_ai_mail/api/websocket.py` - WebSocket connection manager
-- `src/axios_ai_mail/api/routes/messages.py` - Message endpoints
-- `src/axios_ai_mail/api/routes/accounts.py` - Account endpoints
-- `src/axios_ai_mail/api/routes/stats.py` - Statistics endpoints
-- `src/axios_ai_mail/api/routes/sync.py` - Sync control endpoints
-- `src/axios_ai_mail/cli/web.py` - CLI web server command
+- `src/cairn_mail/api/main.py` - FastAPI app with static file serving
+- `src/cairn_mail/api/models.py` - 17 Pydantic models
+- `src/cairn_mail/api/websocket.py` - WebSocket connection manager
+- `src/cairn_mail/api/routes/messages.py` - Message endpoints
+- `src/cairn_mail/api/routes/accounts.py` - Account endpoints
+- `src/cairn_mail/api/routes/stats.py` - Statistics endpoints
+- `src/cairn_mail/api/routes/sync.py` - Sync control endpoints
+- `src/cairn_mail/cli/web.py` - CLI web server command
 
 ### Frontend (React + Material-UI)
 - ✅ **React 18 + TypeScript** foundation with Vite
@@ -64,7 +64,7 @@ Phase 2 (Web UI with Material Design) has been successfully implemented! The web
 
 **Build Process:**
 1. Build frontend with `npm ci && npm run build`
-2. Copy `web/dist/*` to `src/axios_ai_mail/web_assets/`
+2. Copy `web/dist/*` to `src/cairn_mail/web_assets/`
 3. Include `web_assets/**/*` in Python package
 4. FastAPI serves static files from `web_assets/` or `web/dist/`
 
@@ -74,16 +74,16 @@ Phase 2 (Web UI with Material Design) has been successfully implemented! The web
 
 **Terminal 1:** Start backend API
 ```bash
-cd ~/Projects/axios-ai-mail
+cd ~/Projects/cairn-mail
 nix develop  # Or use existing Python environment
 python -m pip install -e '.[api]'  # Install API dependencies
-python -m axios_ai_mail.api.main
-# Or: uvicorn axios_ai_mail.api.main:app --reload --port 8080
+python -m cairn_mail.api.main
+# Or: uvicorn cairn_mail.api.main:app --reload --port 8080
 ```
 
 **Terminal 2:** Start frontend dev server
 ```bash
-cd ~/Projects/axios-ai-mail/web
+cd ~/Projects/cairn-mail/web
 npm install  # If not already done
 npm run dev
 # Opens at http://localhost:5173
@@ -91,7 +91,7 @@ npm run dev
 
 **Terminal 3:** Trigger a sync (optional)
 ```bash
-axios-ai-mail sync run
+cairn-mail sync run
 # Watch real-time updates in the web UI!
 ```
 
@@ -99,27 +99,27 @@ axios-ai-mail sync run
 
 **1. Rebuild the package:**
 ```bash
-cd ~/Projects/axios-ai-mail
+cd ~/Projects/cairn-mail
 nix build
 ```
 
 This will:
 - Install Node.js
 - Run `npm ci && npm run build` in `web/`
-- Copy built frontend to `src/axios_ai_mail/web_assets/`
+- Copy built frontend to `src/cairn_mail/web_assets/`
 - Build Python package with all dependencies
-- Result in `./result/bin/axios-ai-mail`
+- Result in `./result/bin/cairn-mail`
 
 **2. Test the built package:**
 ```bash
-./result/bin/axios-ai-mail web
+./result/bin/cairn-mail web
 # Opens at http://localhost:8080
 ```
 
 **3. Deploy via home-manager:**
 ```nix
 # In your home-manager configuration
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   ui = {
@@ -133,7 +133,7 @@ programs.axios-ai-mail = {
 
 ```bash
 home-manager switch
-systemctl --user status axios-ai-mail-web
+systemctl --user status cairn-mail-web
 # Access at http://localhost:8080
 ```
 

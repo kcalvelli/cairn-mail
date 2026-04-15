@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get axios-ai-mail running in about 15 minutes.
+Get cairn-mail running in about 15 minutes.
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ Before you begin, ensure you have:
 
 ## Architecture Overview
 
-axios-ai-mail uses a **split architecture**:
+cairn-mail uses a **split architecture**:
 
 | Module | Level | Purpose |
 |--------|-------|---------|
@@ -26,25 +26,25 @@ This separation allows proper service management while keeping user configuratio
 
 ## Step 1: Add to Your Flake
 
-Add axios-ai-mail to your `flake.nix`:
+Add cairn-mail to your `flake.nix`:
 
 ```nix
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
-    axios-ai-mail.url = "github:kcalvelli/axios-ai-mail";
+    cairn-mail.url = "github:kcalvelli/cairn-mail";
   };
 
-  outputs = { self, nixpkgs, home-manager, axios-ai-mail, ... }: {
+  outputs = { self, nixpkgs, home-manager, cairn-mail, ... }: {
     nixosConfigurations.yourhostname = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        # 1. Apply overlay (adds pkgs.axios-ai-mail)
-        { nixpkgs.overlays = [ axios-ai-mail.overlays.default ]; }
+        # 1. Apply overlay (adds pkgs.cairn-mail)
+        { nixpkgs.overlays = [ cairn-mail.overlays.default ]; }
 
         # 2. Import NixOS module for system services
-        axios-ai-mail.nixosModules.default
+        cairn-mail.nixosModules.default
 
         # 3. Your NixOS configuration
         ./configuration.nix
@@ -53,7 +53,7 @@ Add axios-ai-mail to your `flake.nix`:
         home-manager.nixosModules.home-manager
         {
           home-manager.users.youruser = { ... }: {
-            imports = [ axios-ai-mail.homeManagerModules.default ];
+            imports = [ cairn-mail.homeManagerModules.default ];
             # User config goes here (see Step 2)
           };
         }
@@ -70,8 +70,8 @@ In your NixOS configuration (e.g., `configuration.nix`), enable the services:
 ```nix
 { config, ... }:
 {
-  # Enable axios-ai-mail system services
-  services.axios-ai-mail = {
+  # Enable cairn-mail system services
+  services.cairn-mail = {
     enable = true;
     port = 8080;
     user = "youruser";  # User whose config to read
@@ -99,7 +99,7 @@ In your home-manager configuration, set up accounts and AI settings:
 ```nix
 { config, ... }:
 {
-  programs.axios-ai-mail = {
+  programs.cairn-mail = {
     enable = true;
 
     # AI settings
@@ -131,14 +131,14 @@ Gmail requires OAuth2 authentication. You'll need to create credentials in Googl
 **Creating Google Cloud Credentials:**
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project named `axios-ai-mail`
+2. Create a new project named `cairn-mail`
 3. Enable the **Gmail API**
 4. Go to **OAuth consent screen** -> Configure as "External"
 5. Go to **Credentials** -> Create **OAuth client ID**
    - Application type: **Desktop app**
    - Download the JSON file
 
-**Encrypt the token (axiOS/agenix users):**
+**Encrypt the token (Cairn/agenix users):**
 
 ```bash
 # Add to secrets.nix
@@ -160,7 +160,7 @@ git add gmail-personal.age
 age.secrets.gmail-personal.file = ./secrets/gmail-personal.age;
 
 # In your home-manager config
-programs.axios-ai-mail.accounts.personal = {
+programs.cairn-mail.accounts.personal = {
   provider = "gmail";
   email = "you@gmail.com";
   realName = "Your Name";
@@ -188,7 +188,7 @@ git add fastmail-password.age
 age.secrets.fastmail-password.file = ./secrets/fastmail-password.age;
 
 # In your home-manager config
-programs.axios-ai-mail.accounts.work = {
+programs.cairn-mail.accounts.work = {
   provider = "imap";
   email = "you@fastmail.com";
   realName = "Your Name";
@@ -215,11 +215,11 @@ programs.axios-ai-mail.accounts.work = {
 sudo nixos-rebuild switch --flake .
 
 # Check service status
-systemctl status axios-ai-mail-web.service
-systemctl status axios-ai-mail-sync.timer
+systemctl status cairn-mail-web.service
+systemctl status cairn-mail-sync.timer
 
 # View logs
-sudo journalctl -u axios-ai-mail-web.service -f
+sudo journalctl -u cairn-mail-web.service -f
 ```
 
 ## Step 6: Access the Web UI
@@ -257,25 +257,25 @@ The app will appear in your application launcher.
 
 ## Service Management
 
-axios-ai-mail runs as **system-level systemd services**:
+cairn-mail runs as **system-level systemd services**:
 
 ```bash
 # Check service status
-systemctl status axios-ai-mail-web.service
-systemctl status axios-ai-mail-sync.timer
-systemctl status axios-ai-mail-tailscale-serve.service  # if enabled
+systemctl status cairn-mail-web.service
+systemctl status cairn-mail-sync.timer
+systemctl status cairn-mail-tailscale-serve.service  # if enabled
 
 # Restart web service
-sudo systemctl restart axios-ai-mail-web.service
+sudo systemctl restart cairn-mail-web.service
 
 # Trigger sync manually (instead of waiting for timer)
-sudo systemctl start axios-ai-mail-sync.service
+sudo systemctl start cairn-mail-sync.service
 
 # View web service logs
-sudo journalctl -u axios-ai-mail-web.service -f
+sudo journalctl -u cairn-mail-web.service -f
 
 # View sync service logs
-sudo journalctl -u axios-ai-mail-sync.service -f
+sudo journalctl -u cairn-mail-sync.service -f
 ```
 
 ## Troubleshooting
@@ -284,7 +284,7 @@ sudo journalctl -u axios-ai-mail-sync.service -f
 
 Ensure the web service is running:
 ```bash
-systemctl status axios-ai-mail-web.service
+systemctl status cairn-mail-web.service
 ```
 
 ### AI classification not working
@@ -299,12 +299,12 @@ ollama list  # Should show llama3.2 or your configured model
 
 Check sync service logs:
 ```bash
-sudo journalctl -u axios-ai-mail-sync.service -n 50
+sudo journalctl -u cairn-mail-sync.service -n 50
 ```
 
 Trigger a manual sync:
 ```bash
-sudo systemctl start axios-ai-mail-sync.service
+sudo systemctl start cairn-mail-sync.service
 ```
 
 ### OAuth token expired (Gmail)
@@ -333,20 +333,20 @@ Here's a complete multi-account setup:
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
-    axios-ai-mail.url = "github:kcalvelli/axios-ai-mail";
+    cairn-mail.url = "github:kcalvelli/cairn-mail";
     agenix.url = "github:ryantm/agenix";
   };
 
-  outputs = { nixpkgs, home-manager, axios-ai-mail, agenix, ... }: {
+  outputs = { nixpkgs, home-manager, cairn-mail, agenix, ... }: {
     nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
         # Overlays
-        { nixpkgs.overlays = [ axios-ai-mail.overlays.default ]; }
+        { nixpkgs.overlays = [ cairn-mail.overlays.default ]; }
 
         # Modules
         agenix.nixosModules.default
-        axios-ai-mail.nixosModules.default
+        cairn-mail.nixosModules.default
 
         # NixOS config
         ({ config, ... }: {
@@ -354,8 +354,8 @@ Here's a complete multi-account setup:
           age.secrets.gmail-token.file = ./secrets/gmail-token.age;
           age.secrets.fastmail-password.file = ./secrets/fastmail-password.age;
 
-          # axios-ai-mail system services
-          services.axios-ai-mail = {
+          # cairn-mail system services
+          services.cairn-mail = {
             enable = true;
             port = 8080;
             user = "keith";
@@ -378,9 +378,9 @@ Here's a complete multi-account setup:
         home-manager.nixosModules.home-manager
         {
           home-manager.users.keith = { config, ... }: {
-            imports = [ axios-ai-mail.homeManagerModules.default ];
+            imports = [ cairn-mail.homeManagerModules.default ];
 
-            programs.axios-ai-mail = {
+            programs.cairn-mail = {
               enable = true;
 
               ai = {

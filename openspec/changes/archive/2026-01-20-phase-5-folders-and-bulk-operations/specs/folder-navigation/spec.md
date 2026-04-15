@@ -184,7 +184,7 @@ Different email accounts MUST support different folder structures and naming con
 
 **Given** a Nix configuration for an IMAP account:
 ```nix
-programs.axios-ai-mail.accounts.work = {
+programs.cairn-mail.accounts.work = {
   provider = "imap";
   email = "user@fastmail.com";
   folders = ["INBOX", "Sent Items", "Drafts", "Archive"];

@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from axios_ai_mail.ai_classifier import AIClassifier, AIConfig
-from axios_ai_mail.providers.base import Classification, Message
+from cairn_mail.ai_classifier import AIClassifier, AIConfig
+from cairn_mail.providers.base import Classification, Message
 
 
 @pytest.fixture

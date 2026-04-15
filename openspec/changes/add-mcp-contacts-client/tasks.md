@@ -85,7 +85,7 @@
 
 - [ ] **5.3** Documentation
   - Configuration guide for standalone users
-  - Configuration guide for axios users
+  - Configuration guide for cairn users
   - Troubleshooting (MCP server not found, etc.)
 
 ## Dependencies

@@ -49,4 +49,4 @@
 - [x] 9.1 Gmail-style collapsible sidebar (expanded/collapsed rail)
 - [x] 9.2 Smooth collapse animation with CSS transitions
 - [x] 9.3 Floating Compose FAB (desktop and mobile)
-- [x] 9.4 Rename app title to "axiOS Mail"
+- [x] 9.4 Rename app title to "Cairn Mail"

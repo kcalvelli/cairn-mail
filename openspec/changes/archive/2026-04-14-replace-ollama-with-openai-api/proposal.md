@@ -2,7 +2,7 @@
 
 ## Summary
 
-Rip out the Ollama-specific HTTP calls and replace them with standard OpenAI `/v1/chat/completions` requests. The immediate target is axios-companion's openai-gateway on mini, but any endpoint that speaks the OpenAI chat completions protocol works — vLLM, LiteLLM, llama.cpp server, whatever.
+Rip out the Ollama-specific HTTP calls and replace them with standard OpenAI `/v1/chat/completions` requests. The immediate target is cairn-companion's openai-gateway on mini, but any endpoint that speaks the OpenAI chat completions protocol works — vLLM, LiteLLM, llama.cpp server, whatever.
 
 ## Problem
 
@@ -15,7 +15,7 @@ The openai-gateway is already running on mini with Claude behind it. It's warm, 
 1. Replace all three Ollama call sites with OpenAI-compatible chat completions requests
 2. Drop the `ollama-python` dependency from `flake.nix`
 3. Update config defaults and Nix module descriptions to reflect the new backend
-4. Keep the implementation generic — no axios-companion-specific code
+4. Keep the implementation generic — no cairn-companion-specific code
 
 ## Non-Goals
 

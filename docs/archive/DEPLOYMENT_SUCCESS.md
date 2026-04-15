@@ -2,7 +2,7 @@
 
 ## 🎉 Status: SUCCESSFUL
 
-The axios-ai-mail v2 NixOS Home Manager module has been successfully deployed and is fully operational!
+The cairn-mail v2 NixOS Home Manager module has been successfully deployed and is fully operational!
 
 ## Deployment Summary
 
@@ -32,7 +32,7 @@ The axios-ai-mail v2 NixOS Home Manager module has been successfully deployed an
 **Location**: `~/.config/nixos_config/keith.nix`
 
 ```nix
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   accounts.personal = {
@@ -58,7 +58,7 @@ programs.axios-ai-mail = {
 
 ### 3. Generated Runtime Configuration
 
-**File**: `~/.config/axios-ai-mail/config.yaml`
+**File**: `~/.config/cairn-mail/config.yaml`
 
 - Account settings (provider, email, credentials)
 - AI configuration (model, endpoint, tags)
@@ -68,7 +68,7 @@ programs.axios-ai-mail = {
 ### 4. Systemd Services
 
 #### Timer Service
-**File**: `~/.config/systemd/user/axios-ai-mail-sync.timer`
+**File**: `~/.config/systemd/user/cairn-mail-sync.timer`
 
 - **Enabled**: Yes
 - **Schedule**:
@@ -77,10 +77,10 @@ programs.axios-ai-mail = {
 - **Persistent**: Yes (catches up missed runs)
 
 #### Sync Service
-**File**: `~/.config/systemd/user/axios-ai-mail-sync.service`
+**File**: `~/.config/systemd/user/cairn-mail-sync.service`
 
 - **Type**: oneshot
-- **Command**: `axios-ai-mail sync run`
+- **Command**: `cairn-mail sync run`
 - **Last Run**: 2026-01-15 21:35:05 EST
 - **Status**: SUCCESS (exit code 0)
 - **Duration**: 0.46s
@@ -117,7 +117,7 @@ pythonRelaxDeps = [ "httpx" ];
 ### Current System Status
 
 ```
-axios-ai-mail Status
+cairn-mail Status
 
 Configured Accounts:
 ┌────────────┬─────────────────┬──────────┬────────────────┬──────────┬────────┐
@@ -139,14 +139,14 @@ Tag Distribution:
 - junk: 1 (25.0%)
 - personal: 1 (25.0%)
 
-Database: /home/keith/.local/share/axios-ai-mail/mail.db (0.04 MB)
+Database: /home/keith/.local/share/cairn-mail/mail.db (0.04 MB)
 ```
 
 ### Timer Status
 
 ```
 NEXT                         LEFT     LAST                         PASSED SERVICE
-Thu 2026-01-15 21:40:04 EST  4min 54s Thu 2026-01-15 21:35:04 EST  5s ago axios-ai-mail-sync.timer
+Thu 2026-01-15 21:40:04 EST  4min 54s Thu 2026-01-15 21:35:04 EST  5s ago cairn-mail-sync.timer
 ```
 
 **Timer is active and running every 5 minutes as configured!**
@@ -168,7 +168,7 @@ Sync Summary
 │ personal │ 0       │ 0          │ 0       │ 0      │
 └──────────┴─────────┴────────────┴─────────┴────────┘
 
-Finished axios-ai-mail sync service.
+Finished cairn-mail sync service.
 ```
 
 ## What Works Now
@@ -179,7 +179,7 @@ Finished axios-ai-mail sync service.
 ✅ **Runtime Config Generation**: YAML config auto-generated from Nix
 ✅ **Two-Way Label Sync**: AI tags applied as Gmail labels
 ✅ **Service Management**: systemd integration with logs
-✅ **CLI Tools**: `axios-ai-mail` command available system-wide
+✅ **CLI Tools**: `cairn-mail` command available system-wide
 ✅ **Status Reporting**: Real-time statistics and monitoring
 ✅ **Database Management**: SQLite with WAL mode
 ✅ **OAuth2 Authentication**: Token refresh handled automatically
@@ -189,32 +189,32 @@ Finished axios-ai-mail sync service.
 
 ### Check Timer Status
 ```bash
-systemctl --user list-timers | grep axios-ai-mail
+systemctl --user list-timers | grep cairn-mail
 ```
 
 ### Check Service Status
 ```bash
-systemctl --user status axios-ai-mail-sync.service
+systemctl --user status cairn-mail-sync.service
 ```
 
 ### View Logs
 ```bash
-journalctl --user -u axios-ai-mail-sync.service -f
+journalctl --user -u cairn-mail-sync.service -f
 ```
 
 ### Manual Sync
 ```bash
-systemctl --user start axios-ai-mail-sync.service
+systemctl --user start cairn-mail-sync.service
 ```
 
 ### Check System Status
 ```bash
-axios-ai-mail status
+cairn-mail status
 ```
 
 ### View Configuration
 ```bash
-cat ~/.config/axios-ai-mail/config.yaml
+cat ~/.config/cairn-mail/config.yaml
 ```
 
 ## Next Steps
@@ -244,7 +244,7 @@ cat ~/.config/axios-ai-mail/config.yaml
 ### To Add New Accounts
 
 ```nix
-programs.axios-ai-mail.accounts.work = {
+programs.cairn-mail.accounts.work = {
   provider = "imap";
   email = "keith@calvelli.dev";
   passwordFile = config.sops.secrets."email-password".path;
@@ -262,7 +262,7 @@ programs.axios-ai-mail.accounts.work = {
 ### To Customize AI Tags
 
 ```nix
-programs.axios-ai-mail.ai.tags = [
+programs.cairn-mail.ai.tags = [
   { name = "urgent"; description = "Time-sensitive emails requiring immediate action"; }
   { name = "receipts"; description = "Purchase receipts and invoices"; }
   # ...
@@ -272,7 +272,7 @@ programs.axios-ai-mail.ai.tags = [
 ### To Change Sync Frequency
 
 ```nix
-programs.axios-ai-mail.accounts.personal.sync.frequency = "10m"; # Every 10 minutes
+programs.cairn-mail.accounts.personal.sync.frequency = "10m"; # Every 10 minutes
 ```
 
 ## Files Changed in This Deployment
@@ -283,14 +283,14 @@ programs.axios-ai-mail.accounts.personal.sync.frequency = "10m"; # Every 10 minu
 - `pyproject.toml` - Existing, unchanged
 
 ### User Configuration
-- `~/.config/nixos_config/keith.nix` - Added axios-ai-mail configuration
-- `~/.config/nixos_config/flake.lock` - Updated axios-ai-mail input
+- `~/.config/nixos_config/keith.nix` - Added cairn-mail configuration
+- `~/.config/nixos_config/flake.lock` - Updated cairn-mail input
 
 ### Generated Files
-- `~/.config/axios-ai-mail/config.yaml` - Runtime configuration (NEW)
-- `~/.config/systemd/user/axios-ai-mail-sync.timer` - Timer unit (NEW)
-- `~/.config/systemd/user/axios-ai-mail-sync.service` - Service unit (NEW)
-- `~/.local/share/axios-ai-mail/mail.db` - Existing database
+- `~/.config/cairn-mail/config.yaml` - Runtime configuration (NEW)
+- `~/.config/systemd/user/cairn-mail-sync.timer` - Timer unit (NEW)
+- `~/.config/systemd/user/cairn-mail-sync.service` - Service unit (NEW)
+- `~/.local/share/cairn-mail/mail.db` - Existing database
 
 ## Success Metrics
 
@@ -304,7 +304,7 @@ programs.axios-ai-mail.accounts.personal.sync.frequency = "10m"; # Every 10 minu
 
 ## Conclusion
 
-The axios-ai-mail v2 NixOS module is **production-ready** and **fully operational**. The system is:
+The cairn-mail v2 NixOS module is **production-ready** and **fully operational**. The system is:
 
 - ✅ **Declaratively configured** through NixOS
 - ✅ **Automatically syncing** every 5 minutes

@@ -1,4 +1,4 @@
-"""HTTP client wrapper for axios-ai-mail API.
+"""HTTP client wrapper for cairn-mail API.
 
 This module provides a thin client that calls the localhost REST API,
 decoupling MCP logic from API implementation.
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class APIError(Exception):
-    """Error from the axios-ai-mail API."""
+    """Error from the cairn-mail API."""
 
     def __init__(self, message: str, status_code: int | None = None) -> None:
         super().__init__(message)
@@ -27,9 +27,9 @@ class APIConnectionError(APIError):
 
     def __init__(self, base_url: str) -> None:
         super().__init__(
-            f"Could not connect to axios-ai-mail API at {base_url}. "
+            f"Could not connect to cairn-mail API at {base_url}. "
             "Make sure the web service is running: "
-            "systemctl status axios-ai-mail-web.service",
+            "systemctl status cairn-mail-web.service",
             status_code=None,
         )
         self.base_url = base_url
@@ -89,14 +89,14 @@ class Draft:
     in_reply_to: str | None = None
 
 
-class AxiosMailClient:
-    """HTTP client for axios-ai-mail REST API."""
+class CairnMailClient:
+    """HTTP client for cairn-mail REST API."""
 
     def __init__(self, base_url: str = "http://localhost:8080") -> None:
         """Initialize the client.
 
         Args:
-            base_url: Base URL of the axios-ai-mail API
+            base_url: Base URL of the cairn-mail API
         """
         self.base_url = base_url.rstrip("/")
         self._client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)

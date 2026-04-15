@@ -5,16 +5,16 @@
 ### 1. FastAPI Application Structure
 
 **Created Files:**
-- `src/axios_ai_mail/api/__init__.py` - Package initialization
-- `src/axios_ai_mail/api/main.py` - FastAPI app with CORS, database integration
-- `src/axios_ai_mail/api/models.py` - Pydantic models for validation
-- `src/axios_ai_mail/api/websocket.py` - WebSocket manager for real-time updates
-- `src/axios_ai_mail/api/routes/__init__.py` - Routes package
-- `src/axios_ai_mail/api/routes/messages.py` - Message endpoints
-- `src/axios_ai_mail/api/routes/accounts.py` - Account endpoints
-- `src/axios_ai_mail/api/routes/stats.py` - Statistics endpoints
-- `src/axios_ai_mail/api/routes/sync.py` - Sync trigger endpoints
-- `src/axios_ai_mail/cli/web.py` - Web server CLI command
+- `src/cairn_mail/api/__init__.py` - Package initialization
+- `src/cairn_mail/api/main.py` - FastAPI app with CORS, database integration
+- `src/cairn_mail/api/models.py` - Pydantic models for validation
+- `src/cairn_mail/api/websocket.py` - WebSocket manager for real-time updates
+- `src/cairn_mail/api/routes/__init__.py` - Routes package
+- `src/cairn_mail/api/routes/messages.py` - Message endpoints
+- `src/cairn_mail/api/routes/accounts.py` - Account endpoints
+- `src/cairn_mail/api/routes/stats.py` - Statistics endpoints
+- `src/cairn_mail/api/routes/sync.py` - Sync trigger endpoints
+- `src/cairn_mail/cli/web.py` - Web server CLI command
 
 ### 2. REST API Endpoints Implemented
 
@@ -77,7 +77,7 @@ WS     /ws                          # WebSocket connection
 
 **Start Web Server:**
 ```bash
-axios-ai-mail web [OPTIONS]
+cairn-mail web [OPTIONS]
 
 Options:
   --host, -h TEXT     Host to bind (default: 127.0.0.1)
@@ -91,10 +91,10 @@ Options:
 
 ```bash
 # Development mode (auto-reload)
-axios-ai-mail web --reload
+cairn-mail web --reload
 
 # Production mode
-axios-ai-mail web --port 8080
+cairn-mail web --port 8080
 ```
 
 ### 2. Test Endpoints

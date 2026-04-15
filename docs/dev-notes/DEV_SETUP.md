@@ -9,7 +9,7 @@ Fixed the development environment to properly support `pip install -e .` by addi
 ### 1. Enter Development Environment
 
 ```bash
-cd /home/keith/Projects/axios-ai-mail
+cd /home/keith/Projects/cairn-mail
 nix develop
 ```
 
@@ -24,11 +24,11 @@ nix develop
 
 ```bash
 # CLI is automatically available
-axios-ai-mail --help
-axios-ai-mail --version
+cairn-mail --help
+cairn-mail --version
 
 # Python package is importable
-python3 -c "from axios_ai_mail import __version__; print(__version__)"
+python3 -c "from cairn_mail import __version__; print(__version__)"
 ```
 
 ### 3. Make Changes and Test
@@ -36,11 +36,11 @@ python3 -c "from axios_ai_mail import __version__; print(__version__)"
 Since the package is installed in editable mode (`-e`), any changes you make to the code are immediately available:
 
 ```python
-# Edit src/axios_ai_mail/ai_classifier.py
+# Edit src/cairn_mail/ai_classifier.py
 # Changes are immediately reflected without reinstalling
 
 # Test your changes
-python3 -c "from axios_ai_mail.ai_classifier import AIClassifier; print('OK')"
+python3 -c "from cairn_mail.ai_classifier import AIClassifier; print('OK')"
 ```
 
 ### 4. Code Quality Tools
@@ -49,13 +49,13 @@ All tools are pre-installed in the venv:
 
 ```bash
 # Format code
-black src/axios_ai_mail
+black src/cairn_mail
 
 # Lint
-ruff check src/axios_ai_mail
+ruff check src/cairn_mail
 
 # Type check
-mypy src/axios_ai_mail
+mypy src/cairn_mail
 
 # Run tests (when we write them)
 pytest tests/
@@ -114,7 +114,7 @@ nix develop
 pip list
 
 # Should include:
-# - axios-ai-mail (editable)
+# - cairn-mail (editable)
 # - All runtime dependencies (pydantic, sqlalchemy, etc.)
 # - All dev dependencies (pytest, black, ruff, mypy)
 ```
@@ -124,16 +124,16 @@ pip list
 ```bash
 # Quick smoke test
 python3 << 'EOF'
-from axios_ai_mail.db.database import Database
-from axios_ai_mail.credentials import Credentials
-from axios_ai_mail.ai_classifier import AIClassifier, AIConfig
-from axios_ai_mail.providers.base import BaseEmailProvider
+from cairn_mail.db.database import Database
+from cairn_mail.credentials import Credentials
+from cairn_mail.ai_classifier import AIClassifier, AIConfig
+from cairn_mail.providers.base import BaseEmailProvider
 print("✅ All imports successful!")
-print(f"✅ Package installed: axios-ai-mail")
+print(f"✅ Package installed: cairn-mail")
 EOF
 
 # Test CLI
-axios-ai-mail --help
+cairn-mail --help
 echo "✅ CLI working!"
 ```
 
@@ -153,7 +153,7 @@ echo "✅ CLI working!"
 nix build
 
 # Run from Nix build
-./result/bin/axios-ai-mail --help
+./result/bin/cairn-mail --help
 
 # Run as flake app
 nix run . -- --help
@@ -163,13 +163,13 @@ nix run . -- --help
 
 ```bash
 # Test database
-python3 -c "from axios_ai_mail.db.database import Database; db = Database('/tmp/test.db'); accounts = db.list_accounts(); print(f'✅ Database OK ({len(accounts)} accounts)')"
+python3 -c "from cairn_mail.db.database import Database; db = Database('/tmp/test.db'); accounts = db.list_accounts(); print(f'✅ Database OK ({len(accounts)} accounts)')"
 
 # Test credentials (requires a token file)
-python3 -c "from axios_ai_mail.credentials import Credentials; import os; print('✅ Credentials module OK')"
+python3 -c "from cairn_mail.credentials import Credentials; import os; print('✅ Credentials module OK')"
 
 # Test AI classifier (requires Ollama running)
-python3 -c "from axios_ai_mail.ai_classifier import AIClassifier; print('✅ AI Classifier module OK')"
+python3 -c "from cairn_mail.ai_classifier import AIClassifier; print('✅ AI Classifier module OK')"
 ```
 
 ### Interactive Development
@@ -179,10 +179,10 @@ python3 -c "from axios_ai_mail.ai_classifier import AIClassifier; print('✅ AI 
 ipython
 
 # Then in IPython:
-from axios_ai_mail.db.database import Database
-from axios_ai_mail.providers.implementations.gmail import GmailProvider, GmailConfig
-from axios_ai_mail.ai_classifier import AIClassifier, AIConfig
-from axios_ai_mail.sync_engine import SyncEngine
+from cairn_mail.db.database import Database
+from cairn_mail.providers.implementations.gmail import GmailProvider, GmailConfig
+from cairn_mail.ai_classifier import AIClassifier, AIConfig
+from cairn_mail.sync_engine import SyncEngine
 
 # Now you can interactively test components!
 ```

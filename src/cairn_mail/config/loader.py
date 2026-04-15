@@ -24,13 +24,13 @@ class ConfigLoader:
         Load config.yaml (JSON format) from XDG config directory.
 
         Args:
-            config_path: Path to config file. Defaults to ~/.config/axios-ai-mail/config.yaml
+            config_path: Path to config file. Defaults to ~/.config/cairn-mail/config.yaml
 
         Returns:
             Configuration dictionary, or empty dict if file doesn't exist
         """
         if config_path is None:
-            config_path = Path.home() / ".config" / "axios-ai-mail" / "config.yaml"
+            config_path = Path.home() / ".config" / "cairn-mail" / "config.yaml"
 
         # Return cached config if same path
         if cls._cached_config is not None and cls._cached_path == config_path:

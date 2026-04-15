@@ -64,9 +64,9 @@ User quote: *"ability to delete messages from the main screen. There should be a
   - `web/src/components/BulkActionBar.tsx` - NEW: Floating action bar
   - `web/src/components/Sidebar.tsx` - Folder navigation
   - `web/src/hooks/useMessages.ts` - Bulk operation hooks
-  - `src/axios_ai_mail/api/routes/messages.py` - Bulk endpoints (already exist, need testing)
-  - `src/axios_ai_mail/providers/implementations/imap.py` - Multi-folder, IDLE
-  - `src/axios_ai_mail/db/models.py` - Add folder field
+  - `src/cairn_mail/api/routes/messages.py` - Bulk endpoints (already exist, need testing)
+  - `src/cairn_mail/providers/implementations/imap.py` - Multi-folder, IDLE
+  - `src/cairn_mail/db/models.py` - Add folder field
   - `modules/home-manager/default.nix` - Folder configuration
 
 ## Breaking Changes

@@ -112,7 +112,7 @@ def sync_run(
     account: Optional[str] = typer.Option(None, "--account", "-a", help="Account ID to sync"),
     max_messages: int = typer.Option(100, "--max", help="Maximum messages to fetch"),
     db_path: Path = typer.Option(
-        Path.home() / ".local/share/axios-ai-mail/mail.db",
+        Path.home() / ".local/share/cairn-mail/mail.db",
         "--db",
         help="Database path",
     ),
@@ -265,7 +265,7 @@ def sync_reclassify(
     account: str = typer.Argument(..., help="Account ID to reclassify"),
     max_messages: Optional[int] = typer.Option(None, "--max", help="Maximum messages to reclassify"),
     db_path: Path = typer.Option(
-        Path.home() / ".local/share/axios-ai-mail/mail.db",
+        Path.home() / ".local/share/cairn-mail/mail.db",
         "--db",
         help="Database path",
     ),

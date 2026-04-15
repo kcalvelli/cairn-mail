@@ -2,7 +2,7 @@
 
 ## Overview
 
-This spec defines the optional MCP-based contacts integration for axios-ai-mail, enabling contact-aware email workflows through any compatible MCP contacts provider.
+This spec defines the optional MCP-based contacts integration for cairn-mail, enabling contact-aware email workflows through any compatible MCP contacts provider.
 
 ---
 
@@ -10,14 +10,14 @@ This spec defines the optional MCP-based contacts integration for axios-ai-mail,
 
 ### Requirement: MCP Client Connection
 
-axios-ai-mail MUST be able to connect to an external MCP server providing contact tools.
+cairn-mail MUST be able to connect to an external MCP server providing contact tools.
 
 #### Scenario: Successful connection to mcp-dav
 
 **Given** contacts integration is enabled
 **And** `mcpCommand` is set to "mcp-dav"
 **And** mcp-dav is available in PATH
-**When** axios-ai-mail starts
+**When** cairn-mail starts
 **Then** an MCP client connection is established
 **And** the MCP initialize handshake completes successfully
 **And** contact tools are available for use
@@ -26,7 +26,7 @@ axios-ai-mail MUST be able to connect to an external MCP server providing contac
 
 **Given** contacts integration is enabled
 **And** `mcpCommand` is set to "nonexistent-command"
-**When** axios-ai-mail attempts to connect
+**When** cairn-mail attempts to connect
 **Then** an error is logged
 **And** contacts features are disabled
 **And** email features continue to work normally
@@ -43,7 +43,7 @@ axios-ai-mail MUST be able to connect to an external MCP server providing contac
 
 ### Requirement: Contact Search
 
-axios-ai-mail MUST be able to search contacts via MCP when integration is enabled.
+cairn-mail MUST be able to search contacts via MCP when integration is enabled.
 
 #### Scenario: Search contacts by name
 
@@ -77,7 +77,7 @@ axios-ai-mail MUST be able to search contacts via MCP when integration is enable
 
 ### Requirement: Contact Creation
 
-axios-ai-mail MUST be able to create contacts via MCP when integration is enabled.
+cairn-mail MUST be able to create contacts via MCP when integration is enabled.
 
 #### Scenario: Create contact from email
 
@@ -114,7 +114,7 @@ axios-ai-mail MUST be able to create contacts via MCP when integration is enable
 
 ### Requirement: Recipient Resolution
 
-axios-ai-mail MUST resolve natural language recipient references to email addresses when contacts integration is enabled.
+cairn-mail MUST resolve natural language recipient references to email addresses when contacts integration is enabled.
 
 #### Scenario: Resolve "Email John" to email address
 
@@ -145,7 +145,7 @@ axios-ai-mail MUST resolve natural language recipient references to email addres
 
 ### Requirement: Intelligent Contact Suggestions
 
-axios-ai-mail MUST offer to suggest adding unknown senders as contacts when the AI determines it is appropriate.
+cairn-mail MUST offer to suggest adding unknown senders as contacts when the AI determines it is appropriate.
 
 #### Scenario: Personal email from unknown sender
 
@@ -177,7 +177,7 @@ axios-ai-mail MUST offer to suggest adding unknown senders as contacts when the 
 ## Configuration Schema
 
 ```nix
-options.services.axios-ai-mail.integrations.contacts = {
+options.services.cairn-mail.integrations.contacts = {
   enable = mkEnableOption "MCP-based contacts integration";
 
   mcpCommand = mkOption {
@@ -211,7 +211,7 @@ options.services.axios-ai-mail.integrations.contacts = {
 
 ## Cross-References
 
-- **axios-dav mcp-dav**: Primary contacts provider implementing required MCP tools
+- **cairn-dav mcp-dav**: Primary contacts provider implementing required MCP tools
 - **MCP Protocol**: JSON-RPC over stdio, protocol version 2024-11-05
 - **Ollama Function Calling**: Integration point for AI-driven contact operations
 

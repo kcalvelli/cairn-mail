@@ -26,7 +26,7 @@ def set_sqlite_pragma(dbapi_conn, connection_record) -> None:
 
 
 class Database:
-    """SQLite database abstraction for axios-ai-mail."""
+    """SQLite database abstraction for cairn-mail."""
 
     def __init__(self, db_path: str | Path):
         """Initialize database connection.

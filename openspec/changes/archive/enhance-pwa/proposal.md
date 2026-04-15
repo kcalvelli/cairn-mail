@@ -1,7 +1,7 @@
 # Change: Enhance PWA with forced cache updates and push notifications
 
 ## Why
-Two gaps prevent axios-ai-mail from behaving like a native mobile app:
+Two gaps prevent cairn-mail from behaving like a native mobile app:
 
 1. **Stale cache after deploy** — The PWA uses `registerType: 'autoUpdate'` but the new service worker won't activate until all tabs/windows close. Users on mobile (standalone PWA) may run stale code indefinitely because the standalone window is rarely fully closed. There is no mechanism to force a cache clear and immediate update when we ship a new version.
 
@@ -31,9 +31,9 @@ Two gaps prevent axios-ai-mail from behaving like a native mobile app:
   - `web/vite.config.ts` — Workbox config, build hash injection
   - `web/src/App.tsx` — version polling, cache buster
   - `web/src/hooks/useWebSocket.ts` or new hook — version check
-  - `src/axios_ai_mail/api/routes/` — version endpoint, push subscription endpoints
-  - `src/axios_ai_mail/db/models.py` — PushSubscription model
-  - `src/axios_ai_mail/sync_engine.py` — trigger push on new messages
+  - `src/cairn_mail/api/routes/` — version endpoint, push subscription endpoints
+  - `src/cairn_mail/db/models.py` — PushSubscription model
+  - `src/cairn_mail/sync_engine.py` — trigger push on new messages
   - `modules/home-manager/default.nix` — VAPID key config
   - `modules/nixos/default.nix` — VAPID key path, push settings
   - `flake.nix` — pywebpush dependency

@@ -59,9 +59,9 @@
 ## 4. Configuration
 
 - [x] 4.1 Update `modules/home-manager/default.nix`
-  - Add `programs.axios-ai-mail.actions` option set
+  - Add `programs.cairn-mail.actions` option set
   - Each action: `{ description, server, tool, extractionPrompt?, defaultArgs?, enabled? }`
-  - Add `programs.axios-ai-mail.gateway.url` option (default: `"http://localhost:8085"`)
+  - Add `programs.cairn-mail.gateway.url` option (default: `"http://localhost:8085"`)
   - Generate action and gateway config into `config.yaml`
 
 - [x] 4.2 Update `config/loader.py` to load action and gateway config

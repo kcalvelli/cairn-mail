@@ -2,7 +2,7 @@
 
 ## Why
 
-After completing email composition and sending functionality (Phase 7), axios-ai-mail is now a functional email client. However, several areas need improvement to enhance user experience and deliver on the promise of intelligent email management:
+After completing email composition and sending functionality (Phase 7), cairn-mail is now a functional email client. However, several areas need improvement to enhance user experience and deliver on the promise of intelligent email management:
 
 **AI Classification Pain Points:**
 - Current model recommendation (llama3.2) may not be optimal for all users
@@ -27,7 +27,7 @@ After completing email composition and sending functionality (Phase 7), axios-ai
 - Dark mode is increasingly expected in modern applications
 
 **Business Impact:**
-Without these improvements, axios-ai-mail feels like a technical proof-of-concept rather than a polished product. Users who prefer dark mode, want to install as an app, or need better AI recommendations will find the experience lacking.
+Without these improvements, cairn-mail feels like a technical proof-of-concept rather than a polished product. Users who prefer dark mode, want to install as an app, or need better AI recommendations will find the experience lacking.
 
 ## What Changes
 
@@ -61,8 +61,8 @@ Without these improvements, axios-ai-mail feels like a technical proof-of-concep
 ### 2. Branding
 
 **Logo Integration:**
-- Add axios-ai-mail logo to topbar (left side)
-- Logo as PNG asset: `/web/public/axios-ai-mail.png`
+- Add cairn-mail logo to topbar (left side)
+- Logo as PNG asset: `/web/public/cairn-mail.png`
 - Alt text and title for accessibility
 - Link logo to homepage (/)
 
@@ -76,7 +76,7 @@ Without these improvements, axios-ai-mail feels like a technical proof-of-concep
 
 **Manifest Configuration:**
 - Create `manifest.json` with app metadata
-- App name: "Axios AI Mail"
+- App name: "Cairn AI Mail"
 - Short name: "Mail"
 - Theme color matching brand
 - Icons at multiple resolutions (192x192, 512x512)
@@ -127,16 +127,16 @@ Without these improvements, axios-ai-mail feels like a technical proof-of-concep
 
 **New:**
 - `web/public/manifest.json` - PWA manifest
-- `web/public/axios-ai-mail.png` - Logo (192x192)
-- `web/public/axios-ai-mail-512.png` - Logo (512x512)
+- `web/public/cairn-mail.png` - Logo (192x192)
+- `web/public/cairn-mail-512.png` - Logo (512x512)
 - `web/src/contexts/ThemeContext.tsx` - Theme state management
 - `web/src/components/ThemeToggle.tsx` - Theme toggle button
 - `web/src/components/OfflineIndicator.tsx` - Offline status
 - `web/src/hooks/useOnlineStatus.ts` - Online detection hook
 
 **Modified:**
-- `src/axios_ai_mail/ai_classifier.py` - Add confidence extraction
-- `src/axios_ai_mail/api/routes/messages.py` - Return confidence in response
+- `src/cairn_mail/ai_classifier.py` - Add confidence extraction
+- `src/cairn_mail/api/routes/messages.py` - Return confidence in response
 - `web/src/main.tsx` - ThemeProvider wrapper, service worker registration
 - `web/src/components/Layout.tsx` - Logo, unified colors, theme toggle
 - `web/src/components/Sidebar.tsx` - Background color consistency

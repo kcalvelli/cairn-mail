@@ -8,7 +8,7 @@ The system SHALL provide a modern web-based user interface accessible via localh
 
 #### Scenario: Access web UI
 
-- **WHEN** the axios-ai-mail backend server is running
+- **WHEN** the cairn-mail backend server is running
 - **THEN** users SHALL be able to access the web UI at `http://localhost:8080` (configurable port)
 - **AND** the UI SHALL load within 2 seconds on a modern browser
 - **AND** the UI SHALL work on Chrome, Firefox, Safari, and Edge (latest versions)

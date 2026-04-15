@@ -1,6 +1,6 @@
 # AI Model Recommendations
 
-This guide helps you choose the right Ollama model for email classification with axios-ai-mail.
+This guide helps you choose the right Ollama model for email classification with cairn-mail.
 
 ## Quick Recommendations
 
@@ -118,7 +118,7 @@ ollama pull llama3.2
 ollama pull qwen2.5:3b
 
 # Test classification quality
-axios-ai-mail sync run --account personal --max 10
+cairn-mail sync run --account personal --max 10
 ```
 
 Then check the web UI to review classification accuracy.
@@ -168,16 +168,16 @@ Some models may return malformed JSON. Solutions:
 
 *Speed measured on RTX 3080 / RX 6800 XT
 
-## axiOS Integration
+## Cairn Integration
 
-If you're using [axiOS](https://github.com/kcalvelli/axios), Ollama is pre-configured with ROCm acceleration for AMD GPUs. The default 32K context window (`OLLAMA_NUM_CTX`) is more than sufficient for email classification.
+If you're using [Cairn](https://github.com/kcalvelli/cairn), Ollama is pre-configured with ROCm acceleration for AMD GPUs. The default 32K context window (`OLLAMA_NUM_CTX`) is more than sufficient for email classification.
 
 ```nix
-# In your axiOS user config (e.g., keith.nix)
-programs.axios-ai-mail = {
+# In your Cairn user config (e.g., keith.nix)
+programs.cairn-mail = {
   enable = true;
-  ai.model = "llama3.2";  # Uses axiOS's Ollama instance
+  ai.model = "llama3.2";  # Uses Cairn's Ollama instance
 };
 ```
 
-No additional Ollama configuration needed - axiOS handles GPU acceleration automatically.
+No additional Ollama configuration needed - Cairn handles GPU acceleration automatically.

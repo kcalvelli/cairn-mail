@@ -10,7 +10,7 @@ The MCP server currently exposes basic read/compose/delete operations, but exter
 - Add `restore_email` MCP tool — restore messages from trash (API exists: `POST /messages/bulk/restore`)
 - Add `get_unread_count` MCP tool — quick unread count without fetching messages (API exists: `GET /messages/unread-count`)
 - Add `list_tags` MCP tool — show available/active tags (API exists: `GET /tags`)
-- Add corresponding `AxiosMailClient` methods for each new tool
+- Add corresponding `CairnMailClient` methods for each new tool
 - Add new `PUT /api/messages/bulk/tags` API endpoint for bulk tag updates
 
 ## Capabilities
@@ -24,8 +24,8 @@ _(none — existing specs are unaffected; no requirement-level changes to contac
 
 ## Impact
 
-- **MCP layer** (`src/axios_ai_mail/mcp/tools.py`, `client.py`): 6 new tools + 6 new client methods
-- **API layer** (`src/axios_ai_mail/api/routes/messages.py`): 1 new bulk tags endpoint
+- **MCP layer** (`src/cairn_mail/mcp/tools.py`, `client.py`): 6 new tools + 6 new client methods
+- **API layer** (`src/cairn_mail/api/routes/messages.py`): 1 new bulk tags endpoint
 - **No database changes** — all operations use existing DB methods (`update_message_tags`, `move_to_trash`, `query_messages`, etc.)
 - **No provider changes** — tags are local classification metadata, not synced upstream
 - **No frontend changes** — these tools are MCP-only

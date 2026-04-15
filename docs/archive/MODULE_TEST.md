@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide walks through testing the newly implemented Home Manager module for axios-ai-mail v2.
+This guide walks through testing the newly implemented Home Manager module for cairn-mail v2.
 
 ## Current Status
 
@@ -29,13 +29,13 @@ home-manager switch --flake .#keith@desktop
 
 ```bash
 # Check generated runtime config
-cat ~/.config/axios-ai-mail/config.yaml
+cat ~/.config/cairn-mail/config.yaml
 ```
 
 **Expected content:**
 ```yaml
 {
-  "database_path": "/home/keith/.local/share/axios-ai-mail/mail.db",
+  "database_path": "/home/keith/.local/share/cairn-mail/mail.db",
   "accounts": {
     "personal": {
       "id": "personal",
@@ -73,14 +73,14 @@ cat ~/.config/axios-ai-mail/config.yaml
 
 ```bash
 # Check timer is installed and enabled
-systemctl --user list-timers | grep axios-ai-mail
+systemctl --user list-timers | grep cairn-mail
 
 # Check service status
-systemctl --user status axios-ai-mail-sync.service
-systemctl --user status axios-ai-mail-sync.timer
+systemctl --user status cairn-mail-sync.service
+systemctl --user status cairn-mail-sync.timer
 
 # Verify timer configuration
-systemctl --user cat axios-ai-mail-sync.timer
+systemctl --user cat cairn-mail-sync.timer
 ```
 
 **Expected output:**
@@ -95,10 +95,10 @@ systemctl --user cat axios-ai-mail-sync.timer
 
 ```bash
 # Start sync service manually
-systemctl --user start axios-ai-mail-sync.service
+systemctl --user start cairn-mail-sync.service
 
 # Watch logs in real-time
-journalctl --user -u axios-ai-mail-sync.service -f
+journalctl --user -u cairn-mail-sync.service -f
 ```
 
 **Expected outcome:**
@@ -112,7 +112,7 @@ journalctl --user -u axios-ai-mail-sync.service -f
 
 ```bash
 # Run status command
-axios-ai-mail status
+cairn-mail status
 ```
 
 **Expected output:**
@@ -127,11 +127,11 @@ axios-ai-mail status
 
 ```bash
 # Enable and start the timer
-systemctl --user enable axios-ai-mail-sync.timer
-systemctl --user start axios-ai-mail-sync.timer
+systemctl --user enable cairn-mail-sync.timer
+systemctl --user start cairn-mail-sync.timer
 
 # Verify it's running
-systemctl --user list-timers | grep axios-ai-mail
+systemctl --user list-timers | grep cairn-mail
 ```
 
 **Expected outcome:**
@@ -142,7 +142,7 @@ systemctl --user list-timers | grep axios-ai-mail
 
 ```bash
 # Watch for automatic sync executions
-journalctl --user -u axios-ai-mail-sync.service -f
+journalctl --user -u cairn-mail-sync.service -f
 ```
 
 Wait for the timer to trigger (should happen within 2 minutes after boot, then every 5 minutes).
@@ -150,7 +150,7 @@ Wait for the timer to trigger (should happen within 2 minutes after boot, then e
 ## Validation Checklist
 
 - [ ] home-manager switch completes successfully
-- [ ] Config file generated at `~/.config/axios-ai-mail/config.yaml`
+- [ ] Config file generated at `~/.config/cairn-mail/config.yaml`
 - [ ] Config contains correct account settings
 - [ ] Systemd timer installed and enabled
 - [ ] Systemd service installed
@@ -181,12 +181,12 @@ If sync service fails:
 
 ```bash
 # Check detailed logs
-journalctl --user -u axios-ai-mail-sync.service -n 50
+journalctl --user -u cairn-mail-sync.service -n 50
 
 # Common issues:
-# 1. OAuth token expired - run: axios-ai-mail auth setup gmail
+# 1. OAuth token expired - run: cairn-mail auth setup gmail
 # 2. Ollama not running - run: ollama serve
-# 3. Database permissions - check ~/.local/share/axios-ai-mail/
+# 3. Database permissions - check ~/.local/share/cairn-mail/
 ```
 
 ### Missing Configuration
@@ -195,10 +195,10 @@ If config.yaml not generated:
 
 ```bash
 # Verify module is enabled
-home-manager packages | grep axios-ai-mail
+home-manager packages | grep cairn-mail
 
 # Check for file permission issues
-ls -la ~/.config/axios-ai-mail/
+ls -la ~/.config/cairn-mail/
 ```
 
 ## Success Criteria
@@ -229,19 +229,19 @@ If you need to disable the module:
 
 ```bash
 # Edit keith.nix
-programs.axios-ai-mail.enable = false;
+programs.cairn-mail.enable = false;
 
 # Apply
 home-manager switch
 
 # Stop and disable services
-systemctl --user stop axios-ai-mail-sync.timer
-systemctl --user disable axios-ai-mail-sync.timer
+systemctl --user stop cairn-mail-sync.timer
+systemctl --user disable cairn-mail-sync.timer
 ```
 
 ## Notes
 
 - The module uses the same OAuth token file you created earlier
-- Database location: `~/.local/share/axios-ai-mail/mail.db`
-- Logs: `journalctl --user -u axios-ai-mail-sync.service`
+- Database location: `~/.local/share/cairn-mail/mail.db`
+- Logs: `journalctl --user -u cairn-mail-sync.service`
 - The manual test account created earlier will be replaced by the declarative config

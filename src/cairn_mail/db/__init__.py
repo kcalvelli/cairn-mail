@@ -1,4 +1,4 @@
-"""Database layer for axios-ai-mail."""
+"""Database layer for cairn-mail."""
 
 from .database import Database
 from .models import Account, Message, Classification, Feedback

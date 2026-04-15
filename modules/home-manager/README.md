@@ -9,7 +9,7 @@ The existing `modules/home-manager/default.nix` needs to be updated for the v2 A
 Update account options to support the new provider types:
 
 ```nix
-programs.axios-ai-mail.accounts.<name> = {
+programs.cairn-mail.accounts.<name> = {
   provider = "gmail" | "imap" | "outlook";  # NEW: explicit provider
   email = "...";
   realName = "...";
@@ -39,7 +39,7 @@ programs.axios-ai-mail.accounts.<name> = {
 ### 2. AI Configuration
 
 ```nix
-programs.axios-ai-mail.ai = {
+programs.cairn-mail.ai = {
   enable = true;
   model = "llama3.2";
   endpoint = "http://localhost:11434";
@@ -56,8 +56,8 @@ programs.axios-ai-mail.ai = {
 ### 3. UI Configuration
 
 ```nix
-programs.axios-ai-mail.ui = "web";  # or "cli" for headless
-programs.axios-ai-mail.webPort = 8080;
+programs.cairn-mail.ui = "web";  # or "cli" for headless
+programs.cairn-mail.webPort = 8080;
 ```
 
 ### 4. Service Generation
@@ -65,13 +65,13 @@ programs.axios-ai-mail.webPort = 8080;
 Generate systemd services:
 
 ```nix
-systemd.user.services.axios-ai-mail = {
-  description = "axios-ai-mail backend server";
+systemd.user.services.cairn-mail = {
+  description = "cairn-mail backend server";
   after = [ "network.target" ];
   wantedBy = [ "default.target" ];
 
   serviceConfig = {
-    ExecStart = "${pkgs.axios-ai-mail}/bin/axios-ai-mail ...";
+    ExecStart = "${pkgs.cairn-mail}/bin/cairn-mail ...";
     Restart = "on-failure";
 
     # If using systemd-creds
@@ -81,7 +81,7 @@ systemd.user.services.axios-ai-mail = {
   };
 };
 
-systemd.user.timers.axios-ai-mail-sync = {
+systemd.user.timers.cairn-mail-sync = {
   description = "Periodic email sync";
   wantedBy = [ "timers.target" ];
 
@@ -122,7 +122,7 @@ assertions = [
 Generate runtime config file that the Python application reads:
 
 ```nix
-xdg.configFile."axios-ai-mail/config.yaml".text = lib.generators.toYAML {} {
+xdg.configFile."cairn-mail/config.yaml".text = lib.generators.toYAML {} {
   accounts = mapAttrs (name: account: {
     id = name;
     provider = account.provider;
@@ -136,7 +136,7 @@ xdg.configFile."axios-ai-mail/config.yaml".text = lib.generators.toYAML {} {
     };
   }) cfg.accounts;
 
-  database_path = "${config.xdg.dataHome}/axios-ai-mail/mail.db";
+  database_path = "${config.xdg.dataHome}/cairn-mail/mail.db";
 };
 ```
 
@@ -145,7 +145,7 @@ xdg.configFile."axios-ai-mail/config.yaml".text = lib.generators.toYAML {} {
 Store database in XDG data home:
 
 ```nix
-home.file."${config.xdg.dataHome}/axios-ai-mail/.keep".text = "";
+home.file."${config.xdg.dataHome}/cairn-mail/.keep".text = "";
 ```
 
 ## Implementation Priority
@@ -163,12 +163,12 @@ home.file."${config.xdg.dataHome}/axios-ai-mail/.keep".text = "";
 home-manager build
 
 # Check generated config
-cat ~/.config/axios-ai-mail/config.yaml
+cat ~/.config/cairn-mail/config.yaml
 
 # Check systemd units
-systemctl --user list-units | grep axios
+systemctl --user list-units | grep cairn
 
 # Manual test
-axios-ai-mail status
-axios-ai-mail sync run
+cairn-mail status
+cairn-mail sync run
 ```

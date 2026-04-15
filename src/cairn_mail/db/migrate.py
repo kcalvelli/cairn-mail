@@ -5,11 +5,11 @@ from pathlib import Path
 import sys
 
 # Add project root to path
-# __file__ = .../src/axios_ai_mail/db/migrate.py
-# parent = .../src/axios_ai_mail/db
-# parent.parent = .../src/axios_ai_mail
+# __file__ = .../src/cairn_mail/db/migrate.py
+# parent = .../src/cairn_mail/db
+# parent.parent = .../src/cairn_mail
 # parent.parent.parent = .../src
-# parent.parent.parent.parent = .../axios-ai-mail (project root)
+# parent.parent.parent.parent = .../cairn-mail (project root)
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--db-path",
         type=Path,
-        default=Path.home() / ".local/share/axios-ai-mail/mail.db",
+        default=Path.home() / ".local/share/cairn-mail/mail.db",
         help="Path to database file"
     )
 

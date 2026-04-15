@@ -2,7 +2,7 @@
 
 ## Why
 
-axios-ai-mail is connected to contacts via mcp-gateway (used by action tags), but the web UI compose form doesn't leverage this knowledge. Users must type full email addresses manually when composing emails. Standard email clients provide contact-aware autocomplete - axios-ai-mail should too.
+cairn-mail is connected to contacts via mcp-gateway (used by action tags), but the web UI compose form doesn't leverage this knowledge. Users must type full email addresses manually when composing emails. Standard email clients provide contact-aware autocomplete - cairn-mail should too.
 
 ## What Changes
 
@@ -16,5 +16,5 @@ axios-ai-mail is connected to contacts via mcp-gateway (used by action tags), bu
 
 - Affected specs: New `contact-lookup` capability
 - Affected code:
-  - New: `src/axios_ai_mail/api/routes/contacts.py` (autocomplete API endpoint)
+  - New: `src/cairn_mail/api/routes/contacts.py` (autocomplete API endpoint)
   - Modified: `src/web/components/ComposeEmail.tsx` (add autocomplete UI)

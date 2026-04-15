@@ -1,6 +1,6 @@
 # Action Tags
 
-Action tags let you trigger real-world actions from your inbox. Tag an email with `add-contact` or `create-reminder`, and axios-ai-mail will automatically extract the relevant data and create the contact or calendar event for you.
+Action tags let you trigger real-world actions from your inbox. Tag an email with `add-contact` or `create-reminder`, and cairn-mail will automatically extract the relevant data and create the contact or calendar event for you.
 
 ## How It Works
 
@@ -29,7 +29,7 @@ Both actions use Ollama to intelligently extract data from the email content and
 
 ## Prerequisites
 
-Action tags require three external services running alongside axios-ai-mail:
+Action tags require three external services running alongside cairn-mail:
 
 ### 1. Ollama
 
@@ -39,11 +39,11 @@ Local LLM runtime used for extracting structured data from emails.
 - **GitHub:** [github.com/ollama/ollama](https://github.com/ollama/ollama)
 - Pull a model: `ollama pull llama3.2`
 
-### 2. axios-dav (includes mcp-dav)
+### 2. cairn-dav (includes mcp-dav)
 
-Provides CalDAV/CardDAV sync and the MCP server that action tags call to create contacts and calendar events. mcp-dav is a component within the axios-dav project.
+Provides CalDAV/CardDAV sync and the MCP server that action tags call to create contacts and calendar events. mcp-dav is a component within the cairn-dav project.
 
-- **GitHub:** [github.com/kcalvelli/axios-dav](https://github.com/kcalvelli/axios-dav)
+- **GitHub:** [github.com/kcalvelli/cairn-dav](https://github.com/kcalvelli/cairn-dav)
 - Provides: vdirsyncer integration, khal (calendar CLI), khard (contacts CLI), and the mcp-dav MCP server
 - Must be configured with your CalDAV/CardDAV provider (Google, Fastmail, Nextcloud, etc.)
 
@@ -58,7 +58,7 @@ REST API gateway that exposes MCP servers (like mcp-dav) over HTTP. Action tags 
 ### Architecture
 
 ```
-axios-ai-mail                    mcp-gateway                 mcp-dav
+cairn-mail                    mcp-gateway                 mcp-dav
 ┌──────────────┐   HTTP POST    ┌─────────────┐   MCP      ┌───────────────┐
 │ Action Agent │ ──────────────→│ REST API    │ ─────────→ │ create_contact│
 │              │  /api/tools/   │ :8085       │            │ create_event  │
@@ -75,12 +75,12 @@ axios-ai-mail                    mcp-gateway                 mcp-dav
 
 ## Configuration
 
-Action tags are configured in the Home-Manager module under `programs.axios-ai-mail`.
+Action tags are configured in the Home-Manager module under `programs.cairn-mail`.
 
 ### Minimal Setup
 
 ```nix
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   gateway = {
@@ -143,7 +143,7 @@ ls ~/.contacts/        # Addressbook names are directory names (may include subp
 
 ```bash
 # View action processing in real-time
-sudo journalctl -u axios-ai-mail-web.service -f | grep -i action
+sudo journalctl -u cairn-mail-web.service -f | grep -i action
 
 # Check action log via API
 curl http://localhost:8080/api/actions/log | python3 -m json.tool
@@ -162,7 +162,7 @@ You can define your own action tags that call any MCP tool available through mcp
 ### Example: Custom Action
 
 ```nix
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   gateway.enable = true;
   gateway.url = "http://localhost:8085";
   gateway.addressbook = "google/default";
@@ -282,4 +282,4 @@ After action tags create contacts or calendar events locally, they need to be sy
 vdirsyncer sync
 ```
 
-This can be automated via the axios-dav systemd timer if you have it configured.
+This can be automated via the cairn-dav systemd timer if you have it configured.

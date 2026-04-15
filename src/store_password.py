@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 
 def main():
-    parser = argparse.ArgumentParser(description="Securely store email password for Axios AI Mail.")
+    parser = argparse.ArgumentParser(description="Securely store email password for Cairn AI Mail.")
     parser.add_argument("name", help="Name of the account (e.g. 'work', 'fastmail')")
     args = parser.parse_args()
 
@@ -22,7 +22,7 @@ def main():
 
     # Use XDG config home or default
     xdg_config = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-    secrets_dir = Path(xdg_config) / "axios-ai-mail" / "secrets"
+    secrets_dir = Path(xdg_config) / "cairn-mail" / "secrets"
     
     try:
         secrets_dir.mkdir(parents=True, exist_ok=True)

@@ -47,9 +47,9 @@ Phase 3 established working IMAP provider support with basic sync functionality.
 
 - Affected capabilities: `imap-provider`, `web-ui`, `email-management`
 - Affected code:
-  - `src/axios_ai_mail/providers/implementations/imap.py` - IDLE, multi-folder, delete
-  - `src/axios_ai_mail/api/routes/messages.py` - body fetch, mark read, delete
-  - `src/axios_ai_mail/db/models.py` - folder field, body storage
+  - `src/cairn_mail/providers/implementations/imap.py` - IDLE, multi-folder, delete
+  - `src/cairn_mail/api/routes/messages.py` - body fetch, mark read, delete
+  - `src/cairn_mail/db/models.py` - folder field, body storage
   - `web/src/pages/InboxPage.tsx` - search, filtering, folder nav
   - `web/src/components/MessageDetail.tsx` - full body display
   - `modules/home-manager/default.nix` - folder configuration

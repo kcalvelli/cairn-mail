@@ -6,16 +6,16 @@
 
 1. **Python Project Structure**
    - Created `pyproject.toml` with all dependencies
-   - Organized code into `axios_ai_mail` package
+   - Organized code into `cairn_mail` package
    - Set up black, ruff, mypy for code quality
 
-2. **Database Layer** (`src/axios_ai_mail/db/`)
+2. **Database Layer** (`src/cairn_mail/db/`)
    - SQLAlchemy models: Account, Message, Classification, Feedback
    - Database abstraction with context managers
    - SQLite with WAL mode, foreign keys, optimizations
    - Full CRUD operations for all entities
 
-3. **Credential Storage** (`src/axios_ai_mail/credentials.py`)
+3. **Credential Storage** (`src/cairn_mail/credentials.py`)
    - Support for sops-nix decrypted secrets
    - Support for agenix decrypted secrets
    - Support for systemd LoadCredential
@@ -24,21 +24,21 @@
    - File permission validation
    - Secret manager auto-detection
 
-4. **Email Provider Abstraction** (`src/axios_ai_mail/providers/`)
+4. **Email Provider Abstraction** (`src/cairn_mail/providers/`)
    - `EmailProvider` protocol interface
    - `BaseEmailProvider` abstract base class
    - `Message` and `Classification` data classes
    - `ProviderRegistry` for dynamic provider loading
    - Label mapping utilities
 
-5. **Gmail Provider** (`src/axios_ai_mail/providers/implementations/gmail.py`)
+5. **Gmail Provider** (`src/cairn_mail/providers/implementations/gmail.py`)
    - OAuth2 authentication with automatic token refresh
    - Message fetching with date filtering
    - Gmail API label management (create, list, update)
    - Two-way label sync
    - Configurable label prefix and colors
 
-6. **AI Classifier** (`src/axios_ai_mail/ai_classifier.py`)
+6. **AI Classifier** (`src/cairn_mail/ai_classifier.py`)
    - Ollama integration for local LLM
    - Structured JSON output parsing
    - Configurable tag taxonomy
@@ -48,7 +48,7 @@
    - Tag normalization and validation
    - Batch classification support
 
-7. **Sync Engine** (`src/axios_ai_mail/sync_engine.py`)
+7. **Sync Engine** (`src/cairn_mail/sync_engine.py`)
    - Orchestrates fetch → classify → label pipeline
    - Incremental sync (only new messages since last sync)
    - Two-way label sync to provider
@@ -56,11 +56,11 @@
    - Detailed sync statistics (SyncResult)
    - Error isolation (one message failure doesn't stop sync)
 
-8. **CLI Tools** (`src/axios_ai_mail/cli/`)
-   - `axios-ai-mail auth setup gmail` - OAuth2 setup wizard
-   - `axios-ai-mail sync run` - Manual sync trigger
-   - `axios-ai-mail sync reclassify` - Reclassify all messages
-   - `axios-ai-mail status` - Show sync state and statistics
+8. **CLI Tools** (`src/cairn_mail/cli/`)
+   - `cairn-mail auth setup gmail` - OAuth2 setup wizard
+   - `cairn-mail sync run` - Manual sync trigger
+   - `cairn-mail sync reclassify` - Reclassify all messages
+   - `cairn-mail status` - Show sync state and statistics
    - Rich terminal UI with tables, panels, colors
    - Comprehensive error handling and logging
 
@@ -93,7 +93,7 @@ User Configuration (home.nix)
    Systemd Services
          ↓
 ┌──────────────────────────────────┐
-│     axios-ai-mail Backend        │
+│     cairn-mail Backend        │
 ├──────────────────────────────────┤
 │  ┌────────────────────────────┐  │
 │  │    CLI Tools (Typer)       │  │
@@ -150,7 +150,7 @@ User Configuration (home.nix)
 ## Configuration Example
 
 ```nix
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   accounts = {
@@ -192,23 +192,23 @@ nix develop
 pip install -e .
 
 # Run OAuth setup
-axios-ai-mail auth setup gmail --output /tmp/gmail-token.json
+cairn-mail auth setup gmail --output /tmp/gmail-token.json
 
 # Test sync (requires valid credentials)
-axios-ai-mail sync run --account personal --max 10
+cairn-mail sync run --account personal --max 10
 
 # Check status
-axios-ai-mail status
+cairn-mail status
 
 # Reclassify messages
-axios-ai-mail sync reclassify personal --max 50
+cairn-mail sync reclassify personal --max 50
 ```
 
 ### Unit Testing (TODO)
 
 ```bash
 pytest tests/
-pytest --cov=axios_ai_mail tests/
+pytest --cov=cairn_mail tests/
 ```
 
 ## Next Steps

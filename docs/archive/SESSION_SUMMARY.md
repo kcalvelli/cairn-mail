@@ -4,7 +4,7 @@
 
 ## Overview
 
-Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0, completing a major architectural pivot from notmuch/Maildir to a modern API-based architecture with two-way sync.
+Successfully implemented **Phase 1 (Core Infrastructure)** of cairn-mail v2.0, completing a major architectural pivot from notmuch/Maildir to a modern API-based architecture with two-way sync.
 
 ---
 
@@ -41,7 +41,7 @@ Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0
 
 ## 🏗️ Components Implemented
 
-### 1. Database Layer (`src/axios_ai_mail/db/`)
+### 1. Database Layer (`src/cairn_mail/db/`)
 - **Files**: `models.py` (106 lines), `database.py` (268 lines)
 - **Features**:
   - SQLAlchemy ORM with 4 models
@@ -49,7 +49,7 @@ Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0
   - Context managers for transactions
   - Full CRUD operations
 
-### 2. Credential Storage (`src/axios_ai_mail/credentials.py`)
+### 2. Credential Storage (`src/cairn_mail/credentials.py`)
 - **Lines**: 204
 - **Features**:
   - Multi-backend support (sops-nix, agenix, systemd-creds)
@@ -58,7 +58,7 @@ Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0
   - File permission validation
   - Secret manager auto-detection
 
-### 3. Email Provider Abstraction (`src/axios_ai_mail/providers/`)
+### 3. Email Provider Abstraction (`src/cairn_mail/providers/`)
 - **Files**: `base.py` (198 lines), `registry.py` (57 lines)
 - **Features**:
   - Protocol-based interface
@@ -66,7 +66,7 @@ Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0
   - Message normalization
   - Label mapping utilities
 
-### 4. Gmail Provider (`src/axios_ai_mail/providers/implementations/gmail.py`)
+### 4. Gmail Provider (`src/cairn_mail/providers/implementations/gmail.py`)
 - **Lines**: 319
 - **Features**:
   - Gmail API integration
@@ -75,7 +75,7 @@ Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0
   - Label management (create, list, update)
   - Configurable label colors
 
-### 5. AI Classifier (`src/axios_ai_mail/ai_classifier.py`)
+### 5. AI Classifier (`src/cairn_mail/ai_classifier.py`)
 - **Lines**: 228
 - **Features**:
   - Ollama LLM integration
@@ -84,7 +84,7 @@ Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0
   - Priority and action detection
   - Tag normalization
 
-### 6. Sync Engine (`src/axios_ai_mail/sync_engine.py`)
+### 6. Sync Engine (`src/cairn_mail/sync_engine.py`)
 - **Lines**: 349
 - **Features**:
   - Complete fetch → classify → label pipeline
@@ -93,7 +93,7 @@ Successfully implemented **Phase 1 (Core Infrastructure)** of axios-ai-mail v2.0
   - Reclassification support
   - Detailed statistics and error isolation
 
-### 7. CLI Tools (`src/axios_ai_mail/cli/`)
+### 7. CLI Tools (`src/cairn_mail/cli/`)
 - **Files**: `main.py` (62), `auth.py` (206), `sync.py` (208), `status.py` (115)
 - **Features**:
   - Rich terminal UI with colors and tables
@@ -322,7 +322,7 @@ nix develop
 - `PHASE1_COMPLETE.md` - Feature overview
 
 ### Code
-- `src/axios_ai_mail/` - Main package
+- `src/cairn_mail/` - Main package
 - `pyproject.toml` - Package definition
 - `flake.nix` - Nix build
 

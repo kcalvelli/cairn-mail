@@ -1,6 +1,6 @@
 ## Context
 
-axios-ai-mail is a PWA served from a NixOS systemd service. The frontend is built by Nix (`buildNpmPackage`) and bundled into the Python package as static assets. Deploys happen via `nixos-rebuild switch`, which replaces the Nix store path and restarts the systemd service. The new files are immediately available on the server, but the PWA client continues serving from its service worker cache until the SW lifecycle completes.
+cairn-mail is a PWA served from a NixOS systemd service. The frontend is built by Nix (`buildNpmPackage`) and bundled into the Python package as static assets. Deploys happen via `nixos-rebuild switch`, which replaces the Nix store path and restarts the systemd service. The new files are immediately available on the server, but the PWA client continues serving from its service worker cache until the SW lifecycle completes.
 
 The app is accessed via Tailscale Serve (HTTPS) on mobile devices where it is installed as a standalone PWA. In standalone mode, the PWA window is rarely fully closed on mobile, so the "waiting" service worker may never activate.
 

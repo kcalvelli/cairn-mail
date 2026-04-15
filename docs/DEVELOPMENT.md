@@ -1,6 +1,6 @@
 # Development Guide
 
-Guide for setting up and contributing to axios-ai-mail.
+Guide for setting up and contributing to cairn-mail.
 
 ## Table of Contents
 
@@ -28,14 +28,14 @@ Guide for setting up and contributing to axios-ai-mail.
 
 ```bash
 # Clone the repository
-git clone https://github.com/kcalvelli/axios-ai-mail
-cd axios-ai-mail
+git clone https://github.com/kcalvelli/cairn-mail
+cd cairn-mail
 
 # Enter development shell
 nix develop
 
 # Start backend
-python -m axios_ai_mail.api.main
+python -m cairn_mail.api.main
 
 # In another terminal, start frontend
 cd web
@@ -64,8 +64,8 @@ npm --version      # 10.x.x
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_PATH` | `~/.local/share/axios-ai-mail/mail.db` | SQLite database path |
-| `CONFIG_PATH` | `~/.config/axios-ai-mail/config.yaml` | Runtime config path |
+| `DATABASE_PATH` | `~/.local/share/cairn-mail/mail.db` | SQLite database path |
+| `CONFIG_PATH` | `~/.config/cairn-mail/config.yaml` | Runtime config path |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint |
 | `LOG_LEVEL` | `INFO` | Logging level |
 
@@ -74,8 +74,8 @@ npm --version      # 10.x.x
 ## Project Structure
 
 ```
-axios-ai-mail/
-├── src/axios_ai_mail/           # Python backend
+cairn-mail/
+├── src/cairn_mail/           # Python backend
 │   ├── api/                     # FastAPI application
 │   │   ├── main.py             # App entry point
 │   │   ├── routes/             # API route handlers
@@ -102,7 +102,7 @@ axios-ai-mail/
 │   ├── src/
 │   │   ├── components/         # React components
 │   │   ├── hooks/              # Custom hooks
-│   │   ├── api/                # API client (axios)
+│   │   ├── api/                # API client (cairn)
 │   │   ├── store/              # Zustand state
 │   │   └── pages/              # Page components
 │   ├── public/                  # Static assets
@@ -127,10 +127,10 @@ axios-ai-mail/
 ```bash
 # Development mode (auto-reload)
 nix develop
-uvicorn axios_ai_mail.api.main:app --reload --port 8080
+uvicorn cairn_mail.api.main:app --reload --port 8080
 
 # Or using the module
-python -m axios_ai_mail.api.main
+python -m cairn_mail.api.main
 ```
 
 API available at http://localhost:8080
@@ -150,7 +150,7 @@ black src/
 ruff check src/ --fix
 
 # Type checking
-mypy src/axios_ai_mail
+mypy src/cairn_mail
 
 # All checks
 black src/ && ruff check src/ && mypy src/
@@ -158,14 +158,14 @@ black src/ && ruff check src/ && mypy src/
 
 ### Adding API Endpoints
 
-1. Create route handler in `src/axios_ai_mail/api/routes/`
-2. Register router in `src/axios_ai_mail/api/main.py`
+1. Create route handler in `src/cairn_mail/api/routes/`
+2. Register router in `src/cairn_mail/api/main.py`
 3. Add tests in `tests/api/`
 
 Example:
 
 ```python
-# src/axios_ai_mail/api/routes/example.py
+# src/cairn_mail/api/routes/example.py
 from fastapi import APIRouter, Depends
 from ..dependencies import get_db
 
@@ -177,7 +177,7 @@ async def list_examples(db=Depends(get_db)):
 ```
 
 ```python
-# src/axios_ai_mail/api/main.py
+# src/cairn_mail/api/main.py
 from .routes import example
 app.include_router(example.router)
 ```
@@ -334,7 +334,7 @@ def downgrade():
 pytest
 
 # With coverage
-pytest --cov=src/axios_ai_mail --cov-report=html
+pytest --cov=src/cairn_mail --cov-report=html
 
 # Specific test file
 pytest tests/api/test_messages.py
@@ -365,7 +365,7 @@ tests/
 # tests/api/test_messages.py
 import pytest
 from fastapi.testclient import TestClient
-from axios_ai_mail.api.main import app
+from cairn_mail.api.main import app
 
 @pytest.fixture
 def client():
@@ -392,10 +392,10 @@ def test_delete_message(client, test_message):
 nix build
 
 # Run from build output
-./result/bin/axios-ai-mail --help
+./result/bin/cairn-mail --help
 
 # Build specific outputs
-nix build .#axios-ai-mail-web  # Frontend only
+nix build .#cairn-mail-web  # Frontend only
 ```
 
 ### Development Build
@@ -412,10 +412,10 @@ cd web && npm run build
 
 ```bash
 # Build image
-docker build -t axios-ai-mail .
+docker build -t cairn-mail .
 
 # Run container
-docker run -p 8080:8080 axios-ai-mail
+docker run -p 8080:8080 cairn-mail
 ```
 
 ---
@@ -427,7 +427,7 @@ To add support for a new email provider:
 ### 1. Create Provider Class
 
 ```python
-# src/axios_ai_mail/providers/implementations/outlook.py
+# src/cairn_mail/providers/implementations/outlook.py
 from dataclasses import dataclass
 from ..base import BaseEmailProvider, ProviderConfig
 
@@ -462,7 +462,7 @@ class OutlookProvider(BaseEmailProvider):
 ### 2. Register Provider
 
 ```python
-# src/axios_ai_mail/providers/__init__.py
+# src/cairn_mail/providers/__init__.py
 from .implementations.outlook import OutlookProvider
 from .registry import ProviderRegistry
 
@@ -472,7 +472,7 @@ ProviderRegistry.register("outlook", OutlookProvider)
 ### 3. Update Factory
 
 ```python
-# src/axios_ai_mail/providers/factory.py
+# src/cairn_mail/providers/factory.py
 elif account.provider == "outlook":
     config = OutlookConfig(
         account_id=account.id,
@@ -495,7 +495,7 @@ provider = mkOption {
 ### 5. Add Auth Wizard
 
 ```python
-# src/axios_ai_mail/cli/auth.py
+# src/cairn_mail/cli/auth.py
 @auth.command()
 @click.option("--account", required=True)
 def outlook(account: str):
@@ -509,7 +509,7 @@ def outlook(account: str):
 ```python
 # tests/providers/test_outlook.py
 import pytest
-from axios_ai_mail.providers.implementations.outlook import OutlookProvider
+from cairn_mail.providers.implementations.outlook import OutlookProvider
 
 def test_outlook_authentication():
     # Test implementation
@@ -551,7 +551,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 ```bash
 # SQLite CLI
-sqlite3 ~/.local/share/axios-ai-mail/mail.db
+sqlite3 ~/.local/share/cairn-mail/mail.db
 
 # Useful queries
 .tables
@@ -564,5 +564,5 @@ SELECT * FROM messages LIMIT 5;
 
 ```bash
 # Enable verbose logging
-LOG_LEVEL=DEBUG python -m axios_ai_mail.api.main
+LOG_LEVEL=DEBUG python -m cairn_mail.api.main
 ```

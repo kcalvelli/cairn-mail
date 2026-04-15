@@ -2,7 +2,7 @@
 
 ## Architectural Context
 
-This design addresses integrating contact management into axios-ai-mail without creating dependencies on specific contact providers.
+This design addresses integrating contact management into cairn-mail without creating dependencies on specific contact providers.
 
 ### System Landscape
 
@@ -11,14 +11,14 @@ This design addresses integrating contact management into axios-ai-mail without 
 │                        User Environment                              │
 │                                                                      │
 │   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐          │
-│   │ Claude Code │     │   axios     │     │  Standalone │          │
+│   │ Claude Code │     │   cairn     │     │  Standalone │          │
 │   │    User     │     │    User     │     │    User     │          │
 │   └──────┬──────┘     └──────┬──────┘     └──────┬──────┘          │
 │          │                   │                   │                  │
 │          │ MCP               │                   │                  │
 │          ▼                   ▼                   ▼                  │
 │   ┌─────────────────────────────────────────────────────────┐      │
-│   │                   axios-ai-mail                          │      │
+│   │                   cairn-mail                          │      │
 │   │                                                          │      │
 │   │  ┌──────────┐  ┌──────────┐  ┌───────────────────────┐  │      │
 │   │  │  Email   │  │  Ollama  │  │  MCPContactsClient    │  │      │
@@ -44,11 +44,11 @@ This design addresses integrating contact management into axios-ai-mail without 
 
 ### Decision 1: MCP as Integration Protocol
 
-**Context:** We need axios-ai-mail to access contacts without depending on a specific provider.
+**Context:** We need cairn-mail to access contacts without depending on a specific provider.
 
 **Options Considered:**
 1. Direct filesystem access to VCF files
-2. Import axios-dav as flake input
+2. Import cairn-dav as flake input
 3. MCP protocol for inter-process communication
 4. REST API
 
@@ -58,12 +58,12 @@ This design addresses integrating contact management into axios-ai-mail without 
 - MCP is already used by both projects for AI tool exposure
 - Protocol is standardized and well-defined
 - No flake dependency required
-- Any MCP contacts provider works (not just axios-dav)
+- Any MCP contacts provider works (not just cairn-dav)
 - Aligns with modern AI integration patterns
 
 ### Decision 2: Subprocess-Based MCP Connection
 
-**Context:** How should axios-ai-mail connect to the MCP contacts server?
+**Context:** How should cairn-mail connect to the MCP contacts server?
 
 **Options Considered:**
 1. Subprocess (spawn on demand)
@@ -160,11 +160,11 @@ async def resolve_recipient(self, name_or_email: str) -> str:
 **Rationale:**
 - Clear opt-in (not enabled by default)
 - Flexible command specification
-- Works for standalone and axios users
+- Works for standalone and cairn users
 - Self-documenting through module options
 
 ```nix
-services.axios-ai-mail.integrations.contacts = {
+services.cairn-mail.integrations.contacts = {
   enable = true;  # Explicit opt-in
   mcpCommand = "mcp-dav";  # Configurable
   defaultAddressbook = "Personal";  # Where to create contacts

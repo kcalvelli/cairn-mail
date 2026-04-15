@@ -18,7 +18,7 @@ status_app = typer.Typer(help="View sync status and statistics")
 def show_status(
     ctx: typer.Context,
     db_path: Path = typer.Option(
-        Path.home() / ".local/share/axios-ai-mail/mail.db",
+        Path.home() / ".local/share/cairn-mail/mail.db",
         "--db",
         help="Database path",
     ),
@@ -28,11 +28,11 @@ def show_status(
     if ctx.invoked_subcommand is not None:
         return
 
-    console.print("[bold blue]axios-ai-mail Status[/bold blue]\n")
+    console.print("[bold blue]cairn-mail Status[/bold blue]\n")
 
     # Initialize database
     if not db_path.exists():
-        console.print("[yellow]No database found - run 'axios-ai-mail sync run' first[/yellow]")
+        console.print("[yellow]No database found - run 'cairn-mail sync run' first[/yellow]")
         raise typer.Exit(0)
 
     db = Database(db_path)

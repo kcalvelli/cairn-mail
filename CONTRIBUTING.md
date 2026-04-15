@@ -1,6 +1,6 @@
-# Contributing to axios-ai-mail
+# Contributing to cairn-mail
 
-Thank you for your interest in contributing to axios-ai-mail! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to cairn-mail! This document provides guidelines and information for contributors.
 
 ## Code of Ethics
 
@@ -146,7 +146,7 @@ feat(component): Brief description of change
 pytest
 
 # With coverage
-pytest --cov=src/axios_ai_mail
+pytest --cov=src/cairn_mail
 
 # Frontend tests
 cd web && npm run test
@@ -219,4 +219,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-Thank you for contributing to axios-ai-mail!
+Thank you for contributing to cairn-mail!

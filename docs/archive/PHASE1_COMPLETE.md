@@ -2,7 +2,7 @@
 
 ## Summary
 
-**Phase 1 (MVP) implementation is complete!** We've successfully built the foundation of axios-ai-mail v2.0 with a modern, API-based architecture that replaces the notmuch/Maildir approach with cloud-connected providers and two-way sync.
+**Phase 1 (MVP) implementation is complete!** We've successfully built the foundation of cairn-mail v2.0 with a modern, API-based architecture that replaces the notmuch/Maildir approach with cloud-connected providers and two-way sync.
 
 ## What We Built
 
@@ -74,27 +74,27 @@
 #### 7. **CLI Tools** (`cli/`)
 Beautiful command-line interface built with Typer and Rich:
 
-- **`axios-ai-mail auth setup gmail`**
+- **`cairn-mail auth setup gmail`**
   - Interactive OAuth2 setup wizard
   - Opens browser for authorization
   - Local callback server (http://localhost:8080)
   - Saves token to file or stdout
   - Next-step instructions for sops/agenix
 
-- **`axios-ai-mail sync run`**
+- **`cairn-mail sync run`**
   - Manual sync trigger
   - Per-account or all accounts
   - Configurable max messages
   - Rich progress display
   - Summary table with statistics
 
-- **`axios-ai-mail sync reclassify <account>`**
+- **`cairn-mail sync reclassify <account>`**
   - Reclassify all messages for an account
   - Useful after changing AI model or taxonomy
   - Dry-run mode for previewing changes
   - Batch processing with progress
 
-- **`axios-ai-mail status`**
+- **`cairn-mail status`**
   - Show all configured accounts
   - Last sync timestamps
   - Message counts (total, unread)
@@ -124,12 +124,12 @@ Beautiful command-line interface built with Typer and Rich:
                   │
 ┌─────────────────▼───────────────────────────────┐
 │           Systemd Services (TODO)               │
-│  - axios-ai-mail.service (backend)              │
-│  - axios-ai-mail-sync.timer (periodic sync)     │
+│  - cairn-mail.service (backend)              │
+│  - cairn-mail-sync.timer (periodic sync)     │
 └─────────────────┬───────────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────────┐
-│         axios-ai-mail Backend (✓ DONE)          │
+│         cairn-mail Backend (✓ DONE)          │
 ├─────────────────────────────────────────────────┤
 │  CLI Tools (Typer + Rich)                       │
 │    ├─ auth: OAuth2 setup wizard                │
@@ -167,7 +167,7 @@ Beautiful command-line interface built with Typer and Rich:
 
 ## Data Flow: Email Sync
 
-1. **Timer fires** or user runs `axios-ai-mail sync run`
+1. **Timer fires** or user runs `cairn-mail sync run`
 2. **Authenticate** with provider (OAuth2 or password)
 3. **Fetch messages** since last sync timestamp
 4. **Store** message metadata in SQLite database
@@ -182,7 +182,7 @@ Beautiful command-line interface built with Typer and Rich:
 
 ```nix
 # In your home.nix (NixOS module TODO)
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   accounts = {
@@ -214,7 +214,7 @@ programs.axios-ai-mail = {
 ### 1. Set up development environment
 
 ```bash
-cd /home/keith/Projects/axios-ai-mail
+cd /home/keith/Projects/cairn-mail
 nix develop
 
 # Install package in editable mode
@@ -224,7 +224,7 @@ pip install -e .
 ### 2. Set up OAuth2 for Gmail
 
 ```bash
-axios-ai-mail auth setup gmail --output /tmp/gmail-token.json
+cairn-mail auth setup gmail --output /tmp/gmail-token.json
 
 # Encrypt the token with sops/agenix
 sops /tmp/gmail-token.json
@@ -235,10 +235,10 @@ sops /tmp/gmail-token.json
 ```python
 # In Python REPL
 from pathlib import Path
-from axios_ai_mail.db.database import Database
-from axios_ai_mail.providers.implementations.gmail import GmailProvider, GmailConfig
-from axios_ai_mail.ai_classifier import AIClassifier, AIConfig
-from axios_ai_mail.sync_engine import SyncEngine
+from cairn_mail.db.database import Database
+from cairn_mail.providers.implementations.gmail import GmailProvider, GmailConfig
+from cairn_mail.ai_classifier import AIClassifier, AIConfig
+from cairn_mail.sync_engine import SyncEngine
 
 # Initialize components
 db = Database("/tmp/test.db")
@@ -265,7 +265,7 @@ print(result)
 ### 4. Check results
 
 ```bash
-axios-ai-mail status
+cairn-mail status
 ```
 
 ## What's Next: Phase 2
@@ -342,7 +342,7 @@ axios-ai-mail status
 
 ## Thank You!
 
-This was a massive architectural pivot that replaced the entire foundation of axios-ai-mail. We went from a local Maildir+notmuch system to a modern, cloud-connected, API-based architecture with:
+This was a massive architectural pivot that replaced the entire foundation of cairn-mail. We went from a local Maildir+notmuch system to a modern, cloud-connected, API-based architecture with:
 
 - **Two-way sync** (tags sync back to providers)
 - **Modern providers** (Gmail API, future IMAP/Outlook)

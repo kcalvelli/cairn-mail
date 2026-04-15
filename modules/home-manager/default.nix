@@ -1,4 +1,4 @@
-# Home-manager module for axios-ai-mail user configuration
+# Home-manager module for cairn-mail user configuration
 # Handles: email accounts, AI settings, config file generation
 # Services (web, sync, tailscale-serve) are handled by the NixOS module
 { config, lib, pkgs, ... }:
@@ -6,7 +6,7 @@
 with lib;
 
 let
-  cfg = config.programs.axios-ai-mail;
+  cfg = config.programs.cairn-mail;
 
   # Submodule for individual email accounts
   accountOption = types.submodule ({ name, config, ... }: {
@@ -157,7 +157,7 @@ let
 
   # Runtime configuration file
   runtimeConfig = {
-    database_path = "${config.xdg.dataHome}/axios-ai-mail/mail.db";
+    database_path = "${config.xdg.dataHome}/cairn-mail/mail.db";
 
     accounts = mapAttrs (name: account: {
       id = name;
@@ -238,20 +238,20 @@ let
   };
 
 in {
-  options.programs.axios-ai-mail = {
-    enable = mkEnableOption "axios-ai-mail user configuration";
+  options.programs.cairn-mail = {
+    enable = mkEnableOption "cairn-mail user configuration";
 
     package = mkOption {
       type = types.package;
-      default = pkgs.axios-ai-mail;
-      defaultText = literalExpression "pkgs.axios-ai-mail";
-      description = "The axios-ai-mail package to use (from overlay).";
+      default = pkgs.cairn-mail;
+      defaultText = literalExpression "pkgs.cairn-mail";
+      description = "The cairn-mail package to use (from overlay).";
     };
 
     accounts = mkOption {
       type = types.attrsOf accountOption;
       default = {};
-      description = "Email accounts to manage with axios-ai-mail.";
+      description = "Email accounts to manage with cairn-mail.";
       example = literalExpression ''
         {
           personal = {
@@ -371,7 +371,7 @@ in {
       default = {};
       description = ''
         Global sync configuration.
-        Note: Sync frequency/timing is configured in the NixOS module (services.axios-ai-mail.sync).
+        Note: Sync frequency/timing is configured in the NixOS module (services.cairn-mail.sync).
       '';
     };
 
@@ -525,36 +525,36 @@ in {
     assertions = [
       {
         assertion = cfg.accounts != {};
-        message = "axios-ai-mail: at least one account must be configured";
+        message = "cairn-mail: at least one account must be configured";
       }
       {
         assertion = cfg.push.enable -> cfg.push.vapidPrivateKeyFile != null;
-        message = "axios-ai-mail: push.vapidPrivateKeyFile must be set when push notifications are enabled";
+        message = "cairn-mail: push.vapidPrivateKeyFile must be set when push notifications are enabled";
       }
       {
         assertion = cfg.push.enable -> cfg.push.vapidPublicKey != "";
-        message = "axios-ai-mail: push.vapidPublicKey must be set when push notifications are enabled";
+        message = "cairn-mail: push.vapidPublicKey must be set when push notifications are enabled";
       }
       {
         assertion = cfg.push.enable -> cfg.push.contactEmail != "";
-        message = "axios-ai-mail: push.contactEmail must be set when push notifications are enabled (e.g., mailto:you@example.com)";
+        message = "cairn-mail: push.contactEmail must be set when push notifications are enabled (e.g., mailto:you@example.com)";
       }
       {
         assertion = cfg.gateway.enable -> cfg.gateway.addressbook != "";
-        message = "axios-ai-mail: gateway.addressbook must be set when gateway is enabled (vdirsyncer addressbook name)";
+        message = "cairn-mail: gateway.addressbook must be set when gateway is enabled (vdirsyncer addressbook name)";
       }
       {
         assertion = cfg.gateway.enable -> cfg.gateway.calendar != "";
-        message = "axios-ai-mail: gateway.calendar must be set when gateway is enabled (vdirsyncer calendar name)";
+        message = "cairn-mail: gateway.calendar must be set when gateway is enabled (vdirsyncer calendar name)";
       }
     ] ++ (lib.flatten (lib.mapAttrsToList (name: account: [
       {
         assertion = (account.provider == "gmail" || account.provider == "outlook") -> account.oauthTokenFile != null;
-        message = "axios-ai-mail account '${name}': OAuth providers require oauthTokenFile";
+        message = "cairn-mail account '${name}': OAuth providers require oauthTokenFile";
       }
       {
         assertion = account.provider == "imap" -> (account.passwordFile != null && account.imap != null);
-        message = "axios-ai-mail account '${name}': IMAP provider requires passwordFile and imap configuration";
+        message = "cairn-mail account '${name}': IMAP provider requires passwordFile and imap configuration";
       }
     ]) cfg.accounts));
 
@@ -562,11 +562,11 @@ in {
     home.packages = [ cfg.package ];
 
     # Create data directory
-    home.file."${config.xdg.dataHome}/axios-ai-mail/.keep".text = "";
+    home.file."${config.xdg.dataHome}/cairn-mail/.keep".text = "";
 
     # Generate runtime configuration
-    xdg.configFile."axios-ai-mail/config.yaml".text = builtins.toJSON runtimeConfig;
+    xdg.configFile."cairn-mail/config.yaml".text = builtins.toJSON runtimeConfig;
 
-    # Note: Sync service and timer are now in the NixOS module (services.axios-ai-mail.sync)
+    # Note: Sync service and timer are now in the NixOS module (services.cairn-mail.sync)
   };
 }

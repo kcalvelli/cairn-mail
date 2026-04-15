@@ -87,7 +87,7 @@ The PWA SHALL be registered as a share target to receive content from other apps
 
 #### Scenario: Receiving shared text
 - **GIVEN** the PWA is installed
-- **WHEN** the user shares text from another app and selects axiOS Mail
+- **WHEN** the user shares text from another app and selects Cairn Mail
 - **THEN** the compose screen SHALL open
 - **AND** the shared text SHALL pre-fill the message body
 

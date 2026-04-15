@@ -1,5 +1,5 @@
 {
-  description = "axios-ai-mail: Declarative AI-enhanced email workflow";
+  description = "cairn-mail: Declarative AI-enhanced email workflow";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -11,8 +11,8 @@
   in {
     # Overlay - adds packages to pkgs (required for modules)
     overlays.default = final: prev: {
-      axios-ai-mail = self.packages.${final.system}.default;
-      axios-ai-mail-web = self.packages.${final.system}.web;
+      cairn-mail = self.packages.${final.system}.default;
+      cairn-mail-web = self.packages.${final.system}.web;
     };
 
     # NixOS Module - manages package and web service
@@ -20,7 +20,7 @@
     nixosModules.default = import ./modules/nixos;
 
     # Home-Manager Module - user config (accounts, AI settings)
-    # Requires overlay to be applied for pkgs.axios-ai-mail
+    # Requires overlay to be applied for pkgs.cairn-mail
     homeManagerModules.default = import ./modules/home-manager;
 
     # Python package
@@ -29,7 +29,7 @@
 
       # Build web frontend separately
       web-frontend = pkgs.buildNpmPackage {
-        pname = "axios-ai-mail-web";
+        pname = "cairn-mail-web";
         version = "2.0.0";
 
         src = ./web;
@@ -48,7 +48,7 @@
       web = web-frontend;
 
       default = pkgs.python3Packages.buildPythonApplication {
-        pname = "axios-ai-mail";
+        pname = "cairn-mail";
         version = "2.0.0";
 
         src = ./.;
@@ -101,8 +101,8 @@
         preBuild = ''
           echo "Copying pre-built frontend..."
           # Create directory for web assets in package
-          mkdir -p src/axios_ai_mail/web_assets
-          cp -r ${web-frontend}/* src/axios_ai_mail/web_assets/
+          mkdir -p src/cairn_mail/web_assets
+          cp -r ${web-frontend}/* src/cairn_mail/web_assets/
         '';
 
         # Skip tests for now (no tests written yet)
@@ -110,7 +110,7 @@
 
         meta = with pkgs.lib; {
           description = "AI-enhanced email workflow with two-way sync";
-          homepage = "https://github.com/kcalvelli/axios-ai-mail";
+          homepage = "https://github.com/kcalvelli/cairn-mail";
           license = licenses.mit;
         };
       };
@@ -143,17 +143,17 @@
         postShellHook = ''
           unset SOURCE_DATE_EPOCH
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  axios-ai-mail v2.0 development environment"
+          echo "  cairn-mail v2.0 development environment"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           echo "Python virtual environment: $VIRTUAL_ENV"
           echo "Installed in editable mode with [dev] dependencies"
           echo ""
           echo "Available commands:"
-          echo "  axios-ai-mail --help      Show CLI help"
-          echo "  axios-ai-mail auth setup gmail"
-          echo "  axios-ai-mail sync run"
-          echo "  axios-ai-mail status"
+          echo "  cairn-mail --help      Show CLI help"
+          echo "  cairn-mail auth setup gmail"
+          echo "  cairn-mail sync run"
+          echo "  cairn-mail status"
           echo ""
           echo "Run tests: pytest"
           echo "Format code: black ."
@@ -166,11 +166,11 @@
     # Apps for easy running
     apps = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      axios-ai-mail = self.packages.${system}.default;
+      cairn-mail = self.packages.${system}.default;
     in {
       default = {
         type = "app";
-        program = "${axios-ai-mail}/bin/axios-ai-mail";
+        program = "${cairn-mail}/bin/cairn-mail";
       };
 
       # Legacy v1 scripts (kept for backward compatibility)

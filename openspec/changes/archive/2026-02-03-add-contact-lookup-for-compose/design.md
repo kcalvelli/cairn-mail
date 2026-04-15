@@ -2,7 +2,7 @@
 
 ## Context
 
-axios-ai-mail already has:
+cairn-mail already has:
 - `GatewayClient` for calling MCP tools via mcp-gateway REST API
 - mcp-dav server exposing `search_contacts` tool via the gateway
 - Action tags using this infrastructure to create contacts from emails

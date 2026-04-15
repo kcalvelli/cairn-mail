@@ -8,11 +8,11 @@ Phase 5 implemented comprehensive folder and bulk operations in the web UI, incl
 - Permanently delete selected messages
 - Clear all trash
 
-However, **these operations only update the local SQLite database**. They do not sync back to the email provider (Gmail, IMAP), creating a critical inconsistency between the axios-ai-mail UI and the actual email server state.
+However, **these operations only update the local SQLite database**. They do not sync back to the email provider (Gmail, IMAP), creating a critical inconsistency between the cairn-mail UI and the actual email server state.
 
 **User Impact:**
-- Messages deleted in axios-ai-mail still appear in Gmail/webmail
-- Messages restored in axios-ai-mail remain in Trash on the provider
+- Messages deleted in cairn-mail still appear in Gmail/webmail
+- Messages restored in cairn-mail remain in Trash on the provider
 - Permanent deletes don't remove messages from provider servers
 - Clear Trash operation leaves messages on server, wasting quota
 - No offline support - changes don't propagate when reconnected
@@ -94,11 +94,11 @@ To properly restore messages, we need to track their original folder:
 ### Affected Code
 
 **Modified:**
-- `src/axios_ai_mail/providers/base.py` - Add methods to EmailProvider protocol
-- `src/axios_ai_mail/providers/implementations/gmail.py` - Implement trash methods
-- `src/axios_ai_mail/providers/implementations/imap.py` - Add restore_from_trash method
-- `src/axios_ai_mail/api/routes/messages.py` - Integrate provider calls in all trash endpoints
-- `src/axios_ai_mail/api/models.py` - Add error details to response models
+- `src/cairn_mail/providers/base.py` - Add methods to EmailProvider protocol
+- `src/cairn_mail/providers/implementations/gmail.py` - Implement trash methods
+- `src/cairn_mail/providers/implementations/imap.py` - Add restore_from_trash method
+- `src/cairn_mail/api/routes/messages.py` - Integrate provider calls in all trash endpoints
+- `src/cairn_mail/api/models.py` - Add error details to response models
 
 **Existing behavior:**
 - Database operations remain unchanged (local-first design)
@@ -114,7 +114,7 @@ The two-phase commit approach ensures operations succeed locally even if provide
 ## User-Facing Changes
 
 ### Before
-- Delete message → only removed from axios-ai-mail database
+- Delete message → only removed from cairn-mail database
 - Message still appears in Gmail/webmail inbox
 - Restore → only updates local database
 - Clear Trash → server quota unchanged

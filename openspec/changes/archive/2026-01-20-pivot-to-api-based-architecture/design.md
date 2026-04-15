@@ -2,7 +2,7 @@
 
 ## Context
 
-This is a complete architectural pivot from a local Maildir+notmuch system to a cloud-connected API-based system. The goal is to make axios-ai-mail practical for real-world use by enabling two-way sync with email providers and offering modern UI options.
+This is a complete architectural pivot from a local Maildir+notmuch system to a cloud-connected API-based system. The goal is to make cairn-mail practical for real-world use by enabling two-way sync with email providers and offering modern UI options.
 
 **Key Stakeholders:**
 - End users who want AI email organization without leaving their normal email client
@@ -60,7 +60,7 @@ This is a complete architectural pivot from a local Maildir+notmuch system to a 
        │         API Calls (fetch/update)  │
        │              │                    │
 ┌──────▼──────────────▼────────────────────▼──────────────────┐
-│              axios-ai-mail Backend                          │
+│              cairn-mail Backend                          │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │          Email Provider Abstraction Layer            │   │
 │  │  (Unified interface for Gmail/IMAP/Outlook)          │   │
@@ -196,7 +196,7 @@ This allows swapping providers without changing classification logic.
 ### Decision: OAuth2 with User-Managed Apps
 
 **Rationale:**
-- **Privacy**: User controls their own OAuth app, axios-ai-mail never sees credentials
+- **Privacy**: User controls their own OAuth app, cairn-mail never sees credentials
 - **Rate Limits**: User gets their own quota (10k requests/day for Gmail)
 - **Security**: No shared secrets, better isolation
 
@@ -204,7 +204,7 @@ This allows swapping providers without changing classification logic.
 
 **Mitigation**: Provide detailed documentation with screenshots and a helper CLI tool:
 ```bash
-axios-ai-mail auth setup gmail
+cairn-mail auth setup gmail
 # Walks through OAuth app creation step-by-step
 # Generates config snippet to paste into home.nix
 ```
@@ -222,7 +222,7 @@ OAuth tokens and IMAP passwords are sensitive credentials that must be stored se
      owner = config.users.users.myuser.name;
    };
 
-   programs.axios-ai-mail.accounts.personal = {
+   programs.cairn-mail.accounts.personal = {
      provider = "gmail";
      oauthTokenFile = config.sops.secrets."email/gmail-oauth".path;
    };
@@ -232,7 +232,7 @@ OAuth tokens and IMAP passwords are sensitive credentials that must be stored se
    ```nix
    age.secrets.gmail-oauth.file = ./secrets/gmail-oauth.age;
 
-   programs.axios-ai-mail.accounts.personal = {
+   programs.cairn-mail.accounts.personal = {
      provider = "gmail";
      oauthTokenFile = config.age.secrets.gmail-oauth.path;
    };
@@ -240,12 +240,12 @@ OAuth tokens and IMAP passwords are sensitive credentials that must be stored se
 
 3. **systemd-creds** (no external dependencies):
    ```nix
-   programs.axios-ai-mail.accounts.personal = {
+   programs.cairn-mail.accounts.personal = {
      provider = "gmail";
-     oauthTokenFile = "/run/credentials/axios-ai-mail.service/gmail-oauth";
+     oauthTokenFile = "/run/credentials/cairn-mail.service/gmail-oauth";
    };
 
-   systemd.services.axios-ai-mail = {
+   systemd.services.cairn-mail = {
      serviceConfig.LoadCredential = [
        "gmail-oauth:/path/to/oauth-token"
      ];
@@ -257,7 +257,7 @@ OAuth tokens and IMAP passwords are sensitive credentials that must be stored se
 # Using sops-nix
 sops.secrets."email/fastmail-password" = {};
 
-programs.axios-ai-mail.accounts.work = {
+programs.cairn-mail.accounts.work = {
   provider = "imap";
   email = "me@fastmail.com";
   passwordFile = config.sops.secrets."email/fastmail-password".path;
@@ -576,7 +576,7 @@ CREATE VIRTUAL TABLE messages_fts USING fts5(
 The module maintains the declarative configuration style from v1, but with provider-specific options:
 
 ```nix
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
 
   # UI mode
@@ -611,7 +611,7 @@ programs.axios-ai-mail = {
       # Secure OAuth token storage (choose one method)
       oauthTokenFile = config.sops.secrets."email/gmail-oauth".path;
       # OR: config.age.secrets.gmail-oauth.path
-      # OR: "/run/credentials/axios-ai-mail.service/gmail-oauth"
+      # OR: "/run/credentials/cairn-mail.service/gmail-oauth"
 
       sync = {
         frequency = "5m";
@@ -695,7 +695,7 @@ programs.axios-ai-mail = {
 {
   inputs = {
     sops-nix.url = "github:Mic92/sops-nix";
-    axios-ai-mail.url = "github:kcalvelli/axios-ai-mail";
+    cairn-mail.url = "github:kcalvelli/cairn-mail";
   };
 }
 ```
@@ -726,7 +726,7 @@ sops.secrets."email/gmail-oauth" = {
   owner = config.users.users.myuser.name;
 };
 
-programs.axios-ai-mail.accounts.personal.oauthTokenFile =
+programs.cairn-mail.accounts.personal.oauthTokenFile =
   config.sops.secrets."email/gmail-oauth".path;
 ```
 
@@ -738,29 +738,29 @@ age.secrets.gmail-oauth = {
   owner = "myuser";
 };
 
-programs.axios-ai-mail.accounts.personal.oauthTokenFile =
+programs.cairn-mail.accounts.personal.oauthTokenFile =
   config.age.secrets.gmail-oauth.path;
 ```
 
 #### Using systemd-creds (no external tools)
 
 ```nix
-systemd.services.axios-ai-mail = {
+systemd.services.cairn-mail = {
   serviceConfig.LoadCredential = [
     "gmail-oauth:${config.users.users.myuser.home}/.secrets/gmail-oauth"
   ];
 };
 
-programs.axios-ai-mail.accounts.personal.oauthTokenFile =
-  "/run/credentials/axios-ai-mail.service/gmail-oauth";
+programs.cairn-mail.accounts.personal.oauthTokenFile =
+  "/run/credentials/cairn-mail.service/gmail-oauth";
 ```
 
 ### Systemd Services
 
 ```
-axios-ai-mail.service       # Main backend server
-axios-ai-mail-sync.timer    # Periodic sync trigger
-axios-ai-mail-sync.service  # Sync execution
+cairn-mail.service       # Main backend server
+cairn-mail-sync.timer    # Periodic sync trigger
+cairn-mail-sync.service  # Sync execution
 ```
 
 ### Docker (for non-NixOS users)
@@ -768,8 +768,8 @@ axios-ai-mail-sync.service  # Sync execution
 ```yaml
 # docker-compose.yml
 services:
-  axios-ai-mail:
-    image: axios-ai-mail:latest
+  cairn-mail:
+    image: cairn-mail:latest
     ports:
       - "8080:8080"
     volumes:
@@ -786,10 +786,10 @@ services:
 
 ## Initial Setup Flow
 
-1. **Add axios-ai-mail to flake inputs**:
+1. **Add cairn-mail to flake inputs**:
 ```nix
 {
-  inputs.axios-ai-mail.url = "github:kcalvelli/axios-ai-mail";
+  inputs.cairn-mail.url = "github:kcalvelli/cairn-mail";
 }
 ```
 
@@ -799,7 +799,7 @@ services:
 
 4. **Run OAuth setup for Gmail/Outlook**:
 ```bash
-axios-ai-mail auth setup gmail
+cairn-mail auth setup gmail
 # Follow prompts, save token to secrets file
 ```
 
@@ -816,7 +816,7 @@ open http://localhost:8080
 
 7. **Verify sync**:
 ```bash
-axios-ai-mail status
+cairn-mail status
 # Shows last sync time, message counts, errors
 ```
 

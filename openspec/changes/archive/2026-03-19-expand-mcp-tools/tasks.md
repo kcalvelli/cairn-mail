@@ -1,10 +1,10 @@
 ## 1. API Layer — Bulk Tags Endpoint
 
-- [x] 1.1 Add `PUT /api/messages/bulk/tags` endpoint to `src/axios_ai_mail/api/routes/messages.py` accepting `{"message_ids": [...], "tags": [...]}`, iterating over messages and calling `db.update_message_tags` with `user_edited=True`
+- [x] 1.1 Add `PUT /api/messages/bulk/tags` endpoint to `src/cairn_mail/api/routes/messages.py` accepting `{"message_ids": [...], "tags": [...]}`, iterating over messages and calling `db.update_message_tags` with `user_edited=True`
 
 ## 2. MCP Client Methods
 
-- [x] 2.1 Add `update_tags(message_id, tags)` method to `AxiosMailClient` calling `PUT /api/messages/{id}/tags`
+- [x] 2.1 Add `update_tags(message_id, tags)` method to `CairnMailClient` calling `PUT /api/messages/{id}/tags`
 - [x] 2.2 Add `bulk_update_tags(message_ids, tags)` method calling `PUT /api/messages/bulk/tags`
 - [x] 2.3 Add `delete_by_filter(tag, folder, account_id)` method calling `POST /api/messages/delete-all`
 - [x] 2.4 Add `restore_messages(message_ids)` method calling `POST /api/messages/bulk/restore`

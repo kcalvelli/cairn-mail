@@ -1,7 +1,7 @@
 # Change: Expand NixOS Module with Tailscale Serve and Sync Service
 
 ## Why
-1. **Tailscale Serve**: Users currently need to manually configure Tailscale Serve to expose axios-ai-mail across their tailnet. This involves writing custom systemd services with timing workarounds. Since axios is opinionated and assumes Tailscale-centric infrastructure, this should be built-in.
+1. **Tailscale Serve**: Users currently need to manually configure Tailscale Serve to expose cairn-mail across their tailnet. This involves writing custom systemd services with timing workarounds. Since cairn is opinionated and assumes Tailscale-centric infrastructure, this should be built-in.
 
 2. **Sync Service Migration**: The sync service is currently in the home-manager module (user-level) while the web service is in the NixOS module (system-level). This inconsistency is confusing - both services run on behalf of the same user and read from the same config file. Consolidating both in the NixOS module simplifies the architecture.
 
@@ -15,7 +15,7 @@
 
 ### Sync Service Migration
 - Add `sync` option set to the NixOS module
-- Move `axios-ai-mail-sync.service` and `axios-ai-mail-sync.timer` from home-manager to NixOS
+- Move `cairn-mail-sync.service` and `cairn-mail-sync.timer` from home-manager to NixOS
 - Remove sync service/timer from home-manager module
 - Both services (web + sync) now managed together at system level
 
@@ -24,13 +24,13 @@
 - Affected code:
   - `modules/nixos/default.nix` (add tailscaleServe + sync)
   - `modules/home-manager/default.nix` (remove sync service/timer)
-- **BREAKING**: Users with `programs.axios-ai-mail.sync` in home-manager need to move to `services.axios-ai-mail.sync`
+- **BREAKING**: Users with `programs.cairn-mail.sync` in home-manager need to move to `services.cairn-mail.sync`
 
 ## Example Usage
 
 ```nix
 # NixOS module (system-level)
-services.axios-ai-mail = {
+services.cairn-mail = {
   enable = true;
   port = 8080;
   user = "keith";
@@ -50,7 +50,7 @@ services.axios-ai-mail = {
 };
 
 # Home-manager module (user-level) - unchanged
-programs.axios-ai-mail = {
+programs.cairn-mail = {
   enable = true;
   accounts = { ... };   # Still here
   ai = { ... };         # Still here
@@ -60,6 +60,6 @@ programs.axios-ai-mail = {
 
 ## Migration Path
 Users upgrading from previous versions:
-1. Move `programs.axios-ai-mail.sync.*` options to `services.axios-ai-mail.sync.*`
+1. Move `programs.cairn-mail.sync.*` options to `services.cairn-mail.sync.*`
 2. Remove any manual Tailscale Serve systemd services
 3. Add `tailscaleServe.enable = true` if exposing via Tailscale

@@ -10,14 +10,14 @@ from alembic import context
 # Import our models
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-from axios_ai_mail.db.models import Base
+from cairn_mail.db.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
 # Set database URL programmatically
-db_path = os.getenv("AXIOS_DB_PATH", str(Path.home() / ".local/share/axios-ai-mail/mail.db"))
+db_path = os.getenv("CAIRN_DB_PATH", str(Path.home() / ".local/share/cairn-mail/mail.db"))
 config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
 
 # Interpret the config file for Python logging.

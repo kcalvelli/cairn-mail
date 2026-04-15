@@ -4,11 +4,11 @@
 
 - [x] 1.1 Add `mcp` package to `pyproject.toml` dependencies
 - [x] 1.2 Update Nix flake to include MCP dependency
-- [x] 1.3 Create `src/axios_ai_mail/mcp/` module directory with `__init__.py`
+- [x] 1.3 Create `src/cairn_mail/mcp/` module directory with `__init__.py`
 
 ## 2. HTTP Client Wrapper
 
-- [x] 2.1 Create `mcp/client.py` with `AxiosMailClient` class
+- [x] 2.1 Create `mcp/client.py` with `CairnMailClient` class
 - [x] 2.2 Implement `list_accounts()` method (GET /api/accounts)
 - [x] 2.3 Implement `search_messages()` method (GET /api/messages with filters)
 - [x] 2.4 Implement `get_message()` method (GET /api/messages/{id})

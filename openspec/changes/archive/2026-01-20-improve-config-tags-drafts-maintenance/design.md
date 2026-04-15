@@ -2,7 +2,7 @@
 
 ## Context
 
-axios-ai-mail uses a NixOS/home-manager module for declarative configuration. The current config structure evolved organically, leading to:
+cairn-mail uses a NixOS/home-manager module for declarative configuration. The current config structure evolved organically, leading to:
 - Duplicated settings across accounts
 - Unclear relationship between AI tags and provider labels
 - Missing UX features for draft management

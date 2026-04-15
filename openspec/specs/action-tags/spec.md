@@ -39,7 +39,7 @@ The system SHALL maintain a registry of action definitions that map action tag n
 #### Scenario: Custom action defined via Nix config
 - **GIVEN** a user defines a custom action in their Nix configuration:
   ```nix
-  programs.axios-ai-mail.actions."save-receipt" = {
+  programs.cairn-mail.actions."save-receipt" = {
     description = "Save receipt to expense tracker";
     gateway.server = "expenses";
     gateway.tool = "add_expense";
@@ -204,7 +204,7 @@ Users SHALL be able to define custom action tags via Nix configuration that map 
 #### Scenario: Minimal custom action
 - **GIVEN** a user adds to their Nix config:
   ```nix
-  programs.axios-ai-mail.actions."flag-important" = {
+  programs.cairn-mail.actions."flag-important" = {
     description = "Forward to manager";
     gateway.server = "mail";
     gateway.tool = "send_email";
@@ -217,7 +217,7 @@ Users SHALL be able to define custom action tags via Nix configuration that map 
 #### Scenario: Action with default arguments
 - **GIVEN** an action definition includes `defaultArgs`:
   ```nix
-  programs.axios-ai-mail.actions."add-contact" = {
+  programs.cairn-mail.actions."add-contact" = {
     gateway.server = "dav";
     gateway.tool = "create_contact";
     defaultArgs = { addressbook = "Family"; };
@@ -230,7 +230,7 @@ Users SHALL be able to define custom action tags via Nix configuration that map 
 #### Scenario: Gateway URL configuration
 - **GIVEN** the user configures:
   ```nix
-  programs.axios-ai-mail.gateway.url = "http://mcp-gateway.tailnet:8085";
+  programs.cairn-mail.gateway.url = "http://mcp-gateway.tailnet:8085";
   ```
 - **WHEN** the action agent connects to mcp-gateway
 - **THEN** it uses the configured URL instead of the default

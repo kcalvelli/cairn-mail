@@ -57,7 +57,7 @@
   - **Done**: ThemeToggle.tsx with LightMode/DarkMode/SettingsBrightness icons
 
 - [x] 1.4 Persist theme preference
-  - Store mode in localStorage key `axios-theme`
+  - Store mode in localStorage key `cairn-theme`
   - Restore on app load
   - Apply `color-scheme` CSS property
   - Set `<meta name="theme-color">` dynamically
@@ -66,8 +66,8 @@
 ## 2. PWA Configuration ✅ COMPLETE
 
 - [x] 2.1 Create logo assets
-  - Create/obtain `axios-ai-mail.png` (192x192)
-  - Create/obtain `axios-ai-mail-512.png` (512x512)
+  - Create/obtain `cairn-mail.png` (192x192)
+  - Create/obtain `cairn-mail-512.png` (512x512)
   - Place in `web/public/`
   - Ensure transparent background for dark mode
   - Consider maskable icon variant
@@ -75,7 +75,7 @@
 
 - [x] 2.2 Create manifest.json
   - Create `web/public/manifest.json`
-  - Set name: "Axios AI Mail"
+  - Set name: "Cairn AI Mail"
   - Set short_name: "Mail"
   - Set start_url: "/"
   - Set display: "standalone"

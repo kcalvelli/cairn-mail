@@ -1,6 +1,6 @@
 # Deployment Workflow
 
-**IMPORTANT: Do NOT manually start the application with `./result/bin/axios-ai-mail` or `nix build` commands!**
+**IMPORTANT: Do NOT manually start the application with `./result/bin/cairn-mail` or `nix build` commands!**
 
 This project runs as **system-level systemd services** managed by the NixOS module. The correct workflow is:
 
@@ -13,7 +13,7 @@ This project runs as **system-level systemd services** managed by the NixOS modu
 
 2. Update the flake and rebuild NixOS (run from `~/.config/nixos_config`):
    ```bash
-   cd ~/.config/nixos_config && nix flake update axios-ai-mail && sudo nixos-rebuild switch --flake .
+   cd ~/.config/nixos_config && nix flake update cairn-mail && sudo nixos-rebuild switch --flake .
    ```
 
 3. The systemd service will restart automatically if the package changed.
@@ -22,21 +22,21 @@ This project runs as **system-level systemd services** managed by the NixOS modu
 
 ```bash
 # Check service status
-systemctl status axios-ai-mail-web.service
-systemctl status axios-ai-mail-sync.timer
-systemctl status axios-ai-mail-tailscale-serve.service  # if enabled
+systemctl status cairn-mail-web.service
+systemctl status cairn-mail-sync.timer
+systemctl status cairn-mail-tailscale-serve.service  # if enabled
 
 # Restart web service manually if needed
-sudo systemctl restart axios-ai-mail-web.service
+sudo systemctl restart cairn-mail-web.service
 
 # Trigger a sync manually (instead of waiting for timer)
-sudo systemctl start axios-ai-mail-sync.service
+sudo systemctl start cairn-mail-sync.service
 
 # View web service logs
-sudo journalctl -u axios-ai-mail-web.service -f
+sudo journalctl -u cairn-mail-web.service -f
 
 # View sync service logs (where pending operations are processed)
-sudo journalctl -u axios-ai-mail-sync.service -f
+sudo journalctl -u cairn-mail-sync.service -f
 
 # Check Tailscale Serve status
 tailscale serve status
@@ -58,20 +58,20 @@ Split architecture for proper Nix dependency tracking:
 
 ```nix
 {
-  inputs.axios-ai-mail.url = "github:kcalvelli/axios-ai-mail";
+  inputs.cairn-mail.url = "github:kcalvelli/cairn-mail";
 
-  outputs = { nixpkgs, axios-ai-mail, ... }: {
+  outputs = { nixpkgs, cairn-mail, ... }: {
     nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
       modules = [
-        # 1. Apply overlay (adds pkgs.axios-ai-mail)
-        { nixpkgs.overlays = [ axios-ai-mail.overlays.default ]; }
+        # 1. Apply overlay (adds pkgs.cairn-mail)
+        { nixpkgs.overlays = [ cairn-mail.overlays.default ]; }
 
         # 2. Import NixOS module for web service
-        axios-ai-mail.nixosModules.default
+        cairn-mail.nixosModules.default
 
         # 3. Enable the service
         {
-          services.axios-ai-mail = {
+          services.cairn-mail = {
             enable = true;
             port = 8080;
             user = "keith";  # Reads config from this user's home
@@ -94,9 +94,9 @@ Split architecture for proper Nix dependency tracking:
         # 4. Home-manager for user config (accounts, AI settings)
         {
           home-manager.users.keith = { ... }: {
-            imports = [ axios-ai-mail.homeManagerModules.default ];
+            imports = [ cairn-mail.homeManagerModules.default ];
 
-            programs.axios-ai-mail = {
+            programs.cairn-mail = {
               enable = true;
               accounts.gmail = {
                 provider = "gmail";
@@ -115,7 +115,7 @@ Split architecture for proper Nix dependency tracking:
 
 ## Key Points:
 
-1. **Overlay required**: Adds `pkgs.axios-ai-mail` - proper dependency tracking
+1. **Overlay required**: Adds `pkgs.cairn-mail` - proper dependency tracking
 2. **NixOS module**: System services (web, sync timer, optional tailscale-serve)
 3. **Home-manager module**: User-specific config only (accounts, AI settings)
 4. **Tailscale Serve**: Optional HTTPS exposure across your tailnet (no port forwarding needed)

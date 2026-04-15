@@ -2,7 +2,7 @@
 
 ## Why
 
-Currently, axios-ai-mail is a **read-only email organizer**. Users can view, search, tag, and delete messages, but cannot:
+Currently, cairn-mail is a **read-only email organizer**. Users can view, search, tag, and delete messages, but cannot:
 - Compose new emails
 - Reply to or forward messages
 - Send emails
@@ -15,12 +15,12 @@ This severely limits the product's usefulness. Users must switch to Gmail's webm
 **User Pain Points:**
 - "I can see someone sent me a document, but I can't download it"
 - "I want to reply to this message, but have to open Gmail in my browser"
-- "I can't attach files when composing in axios-ai-mail"
+- "I can't attach files when composing in cairn-mail"
 - "Inline images don't display in message bodies"
 - "No way to save drafts while composing"
 
 **Business Impact:**
-Without composition and sending, axios-ai-mail is incomplete as an email client. Users will continue using Gmail/Outlook webmail for actual email work, reducing the value proposition of this tool to "just another email viewer with AI tags."
+Without composition and sending, cairn-mail is incomplete as an email client. Users will continue using Gmail/Outlook webmail for actual email work, reducing the value proposition of this tool to "just another email viewer with AI tags."
 
 ## What Changes
 
@@ -206,12 +206,12 @@ CREATE TABLE attachments (
 ### Affected Code
 
 **New:**
-- `src/axios_ai_mail/db/drafts.py` - Draft management
-- `src/axios_ai_mail/db/attachments.py` - Attachment storage
-- `src/axios_ai_mail/api/routes/drafts.py` - Draft API endpoints
-- `src/axios_ai_mail/api/routes/attachments.py` - Attachment API endpoints
-- `src/axios_ai_mail/email/composer.py` - MIME message builder
-- `src/axios_ai_mail/email/smtp.py` - SMTP client wrapper
+- `src/cairn_mail/db/drafts.py` - Draft management
+- `src/cairn_mail/db/attachments.py` - Attachment storage
+- `src/cairn_mail/api/routes/drafts.py` - Draft API endpoints
+- `src/cairn_mail/api/routes/attachments.py` - Attachment API endpoints
+- `src/cairn_mail/email/composer.py` - MIME message builder
+- `src/cairn_mail/email/smtp.py` - SMTP client wrapper
 - `web/src/pages/ComposePage.tsx` - Composition UI
 - `web/src/components/RichTextEditor.tsx` - Editor component
 - `web/src/components/AttachmentUpload.tsx` - Upload UI
@@ -219,10 +219,10 @@ CREATE TABLE attachments (
 - `alembic/versions/005_add_drafts_and_attachments.py` - Migration
 
 **Modified:**
-- `src/axios_ai_mail/providers/base.py` - Add send/attachment methods
-- `src/axios_ai_mail/providers/implementations/gmail.py` - Gmail send implementation
-- `src/axios_ai_mail/providers/implementations/imap.py` - SMTP integration
-- `src/axios_ai_mail/db/models.py` - Add Draft and Attachment models
+- `src/cairn_mail/providers/base.py` - Add send/attachment methods
+- `src/cairn_mail/providers/implementations/gmail.py` - Gmail send implementation
+- `src/cairn_mail/providers/implementations/imap.py` - SMTP integration
+- `src/cairn_mail/db/models.py` - Add Draft and Attachment models
 - `web/src/pages/MessageDetailPage.tsx` - Add reply/forward buttons
 - `web/src/components/Sidebar.tsx` - Add Drafts folder
 - `modules/home-manager/default.nix` - Add SMTP config options

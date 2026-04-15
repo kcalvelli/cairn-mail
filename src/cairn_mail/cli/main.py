@@ -11,7 +11,7 @@ from .. import __version__
 
 # Create Typer app
 app = typer.Typer(
-    name="axios-ai-mail",
+    name="cairn-mail",
     help="AI-enhanced email workflow with two-way sync",
     add_completion=False,
 )
@@ -22,7 +22,7 @@ console = Console()
 def version_callback(value: bool) -> None:
     """Show version and exit."""
     if value:
-        console.print(f"axios-ai-mail version {__version__}")
+        console.print(f"cairn-mail version {__version__}")
         raise typer.Exit()
 
 
@@ -38,7 +38,7 @@ def main(
     ),
     verbose: bool = typer.Option(False, "--verbose", help="Enable verbose logging"),
 ) -> None:
-    """axios-ai-mail: AI-enhanced email with two-way sync."""
+    """cairn-mail: AI-enhanced email with two-way sync."""
     # Configure logging
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(

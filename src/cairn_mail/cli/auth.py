@@ -67,7 +67,7 @@ def setup_account(
 
     console.print(
         Panel.fit(
-            "[bold blue]axios-ai-mail Account Setup[/bold blue]\n\n"
+            "[bold blue]cairn-mail Account Setup[/bold blue]\n\n"
             "This wizard will help you configure authentication for your email accounts.",
             border_style="blue",
         )
@@ -195,7 +195,7 @@ def setup_gmail_command(
 ) -> None:
     """Set up Gmail OAuth2 authentication (legacy command).
 
-    Use 'axios-ai-mail auth gmail' for the recommended workflow.
+    Use 'cairn-mail auth gmail' for the recommended workflow.
     """
     setup_gmail_oauth_legacy(email, output)
 
@@ -211,7 +211,7 @@ def gmail_auth_command(
     and sets everything up automatically.
 
     Example:
-        axios-ai-mail auth gmail --account work
+        cairn-mail auth gmail --account work
     """
     from google_auth_oauthlib.flow import InstalledAppFlow
     import glob
@@ -240,7 +240,7 @@ def gmail_auth_command(
         console.print("\n[bold]Account Setup[/bold]\n")
         console.print("Enter a short name for this Gmail account (e.g., 'personal', 'work').")
         console.print("[dim]This name will be used consistently for:[/dim]")
-        console.print("[dim]  • Your Nix config: programs.axios-ai-mail.accounts.[cyan]<name>[/cyan][/dim]")
+        console.print("[dim]  • Your Nix config: programs.cairn-mail.accounts.[cyan]<name>[/cyan][/dim]")
         console.print("[dim]  • Your secret file: gmail-[cyan]<name>[/cyan].age[/dim]")
         console.print("[dim]  • The decrypted path: /run/agenix/gmail-[cyan]<name>[/cyan][/dim]\n")
         account = Prompt.ask("Account name").strip().lower().replace(" ", "-")
@@ -250,7 +250,7 @@ def gmail_auth_command(
 
     # Show what will be created
     console.print(f"\n[green]✓ Account name: [bold]{account}[/bold][/green]")
-    console.print(f"[dim]  • Config key: programs.axios-ai-mail.accounts.{account}[/dim]")
+    console.print(f"[dim]  • Config key: programs.cairn-mail.accounts.{account}[/dim]")
     console.print(f"[dim]  • Secret file: gmail-{account}.age[/dim]")
     console.print(f"[dim]  • Runtime path: /run/agenix/gmail-{account}[/dim]")
 
@@ -266,7 +266,7 @@ def gmail_auth_command(
             "[bold]In Google Cloud Console:[/bold]\n\n"
             "1. Create a new project (or select existing)\n"
             "   • Click 'Select a project' → 'New Project'\n"
-            "   • Name: [cyan]axios-ai-mail[/cyan] → Create\n\n"
+            "   • Name: [cyan]cairn-mail[/cyan] → Create\n\n"
             "2. Enable Gmail API\n"
             "   • Search for [cyan]Gmail API[/cyan] → Enable\n\n"
             "3. Configure OAuth consent screen\n"
@@ -279,7 +279,7 @@ def gmail_auth_command(
             "   • Go to 'Credentials' → 'Create Credentials'\n"
             "   • Choose 'OAuth client ID'\n"
             "   • Application type: [cyan]Desktop app[/cyan]\n"
-            "   • Name: [cyan]axios-ai-mail[/cyan]\n"
+            "   • Name: [cyan]cairn-mail[/cyan]\n"
             "   • Click 'Create'\n\n"
             "5. Download the JSON file\n"
             "   • Click the download icon (⬇)\n"
@@ -312,7 +312,7 @@ def gmail_auth_command(
             for pattern in patterns:
                 console.print(f"  • {downloads_dir / pattern}")
             console.print("\n[yellow]You can also specify the path directly:[/yellow]")
-            console.print(f"  axios-ai-mail auth gmail /path/to/credentials.json")
+            console.print(f"  cairn-mail auth gmail /path/to/credentials.json")
             raise typer.Exit(1)
 
         # Use the most recently modified file
@@ -356,7 +356,7 @@ def gmail_auth_command(
     }
 
     # Save to credentials directory
-    cred_dir = Path.home() / ".local" / "share" / "axios-ai-mail" / "credentials"
+    cred_dir = Path.home() / ".local" / "share" / "cairn-mail" / "credentials"
     cred_dir.mkdir(parents=True, exist_ok=True)
 
     token_file = cred_dir / f"{account}.json"
@@ -369,7 +369,7 @@ def gmail_auth_command(
     # Step 4: Generate agenix configuration
     console.print("\n[bold]Step 4: Agenix Setup[/bold]\n")
 
-    # Axios users store secrets in ~/.config/nixos_config/secrets
+    # Cairn users store secrets in ~/.config/nixos_config/secrets
     secrets_dir = Path.home() / ".config" / "nixos_config" / "secrets"
 
     console.print(Panel(
@@ -395,7 +395,7 @@ def gmail_auth_command(
     nix_config = f'''# Add to your home.nix:
 age.secrets.gmail-{account}.file = ../secrets/gmail-{account}.age;
 
-programs.axios-ai-mail.accounts.{account} = {{
+programs.cairn-mail.accounts.{account} = {{
   provider = "gmail";
   email = "{user_email}";
   oauthTokenFile = config.age.secrets.gmail-{account}.path;
@@ -448,7 +448,7 @@ def setup_gmail_oauth(email: str, account_id: Optional[str] = None) -> None:
     console.print("   (Otherwise refresh tokens expire in 7 days!)")
     console.print("5. Create OAuth 2.0 Client ID:")
     console.print("   - Application type: Desktop app")
-    console.print("   - Name: axios-ai-mail")
+    console.print("   - Name: cairn-mail")
     console.print("6. Download the credentials JSON file")
     console.print("\n[yellow]Press Enter when ready to continue...[/yellow]")
     input()
@@ -568,7 +568,7 @@ def setup_gmail_oauth(email: str, account_id: Optional[str] = None) -> None:
                 "[bold]Next steps:[/bold]\n"
                 "1. Encrypt this token using sops-nix or agenix\n"
                 "2. Add to your home.nix configuration:\n\n"
-                "[cyan]programs.axios-ai-mail.accounts.personal = {\n"
+                "[cyan]programs.cairn-mail.accounts.personal = {\n"
                 "  provider = \"gmail\";\n"
                 "  email = \"your@gmail.com\";\n"
                 f"  oauthTokenFile = config.sops.secrets.\"gmail-oauth\".path;\n"
@@ -586,7 +586,7 @@ def setup_gmail_oauth_legacy(email: str, output: Optional[Path]) -> None:
     """Legacy wrapper for Gmail OAuth setup."""
     # Call the new function but determine output path
     if not output:
-        cred_dir = Path.home() / ".local" / "share" / "axios-ai-mail" / "credentials"
+        cred_dir = Path.home() / ".local" / "share" / "cairn-mail" / "credentials"
         cred_dir.mkdir(parents=True, exist_ok=True)
         safe_email = email.replace("@", "_at_").replace(".", "_")
         output = cred_dir / f"{safe_email}_gmail_oauth.json"
@@ -759,7 +759,7 @@ def setup_imap_account(
             console.print("[dim]SMTP is optional - you can still receive mail[/dim]")
 
     # Save password
-    cred_dir = Path.home() / ".local" / "share" / "axios-ai-mail" / "credentials"
+    cred_dir = Path.home() / ".local" / "share" / "cairn-mail" / "credentials"
     cred_dir.mkdir(parents=True, exist_ok=True)
 
     if account_id:
@@ -779,7 +779,7 @@ def setup_imap_account(
         account_name = email.split("@")[0].replace(".", "_")
 
         nix_config = f"""
-programs.axios-ai-mail.accounts.{account_name} = {{
+programs.cairn-mail.accounts.{account_name} = {{
   provider = "imap";
   email = "{email}";
   passwordFile = "{password_file}";  # or use sops-nix/agenix
@@ -815,7 +815,7 @@ programs.axios-ai-mail.accounts.{account_name} = {{
             Panel.fit(
                 "[bold green]✓ Account Setup Complete![/bold green]\n\n"
                 f"Account '{account_id}' is now configured.\n"
-                "You can now run: [cyan]axios-ai-mail sync run[/cyan]",
+                "You can now run: [cyan]cairn-mail sync run[/cyan]",
                 border_style="green",
             )
         )
@@ -829,7 +829,7 @@ def setup_imap_wizard(
 ) -> None:
     """Set up IMAP authentication (legacy command).
 
-    Use 'axios-ai-mail auth setup' for the recommended workflow.
+    Use 'cairn-mail auth setup' for the recommended workflow.
     """
     if not email:
         email = Prompt.ask("Email address")

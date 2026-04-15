@@ -75,7 +75,7 @@ class IMAPIdleManager:
 
 **Configuration (Nix)**:
 ```nix
-programs.axios-ai-mail.accounts.work = {
+programs.cairn-mail.accounts.work = {
   provider = "imap";
   folders = [ "inbox" "sent" "archive" ];  # Default: [ "inbox" ]
 };

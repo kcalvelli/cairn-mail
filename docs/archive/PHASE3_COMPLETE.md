@@ -13,8 +13,8 @@ Phase 3 (IMAP Provider Support) has been successfully implemented! The system no
 ### 1. Config Loader System ✅
 
 **Files Created:**
-- `src/axios_ai_mail/config/__init__.py`
-- `src/axios_ai_mail/config/loader.py`
+- `src/cairn_mail/config/__init__.py`
+- `src/cairn_mail/config/loader.py`
 
 **Changes:**
 - CLI and API now load Nix-generated `config.yaml` on startup
@@ -29,11 +29,11 @@ Nix Module → config.yaml → ConfigLoader → SQLite Database
 ### 2. Provider Factory Pattern ✅
 
 **Files Created:**
-- `src/axios_ai_mail/providers/factory.py`
+- `src/cairn_mail/providers/factory.py`
 
 **Changes:**
-- `src/axios_ai_mail/cli/sync.py` - Uses ProviderFactory instead of hard-coded Gmail checks
-- `src/axios_ai_mail/api/routes/sync.py` - Same refactoring
+- `src/cairn_mail/cli/sync.py` - Uses ProviderFactory instead of hard-coded Gmail checks
+- `src/cairn_mail/api/routes/sync.py` - Same refactoring
 
 **Before (hard-coded):**
 ```python
@@ -53,7 +53,7 @@ provider.authenticate()
 ### 3. IMAP Provider Implementation ✅
 
 **Files Created:**
-- `src/axios_ai_mail/providers/implementations/imap.py` (~410 lines)
+- `src/cairn_mail/providers/implementations/imap.py` (~410 lines)
 
 **Features:**
 - Full BaseEmailProvider interface implementation
@@ -74,7 +74,7 @@ provider.authenticate()
 ### 4. IMAP Server Registry ✅
 
 **Files Created:**
-- `src/axios_ai_mail/providers/server_registry.py`
+- `src/cairn_mail/providers/server_registry.py`
 
 **Features:**
 - Auto-detection of IMAP settings for 15+ providers
@@ -91,7 +91,7 @@ host, port, ssl = IMAPServerRegistry.get_server_config("user@fastmail.com")
 ### 5. IMAP Authentication Wizard ✅
 
 **Changes:**
-- `src/axios_ai_mail/cli/auth.py` - Added `setup-imap` command
+- `src/cairn_mail/cli/auth.py` - Added `setup-imap` command
 
 **Features:**
 - Interactive CLI wizard
@@ -103,13 +103,13 @@ host, port, ssl = IMAPServerRegistry.get_server_config("user@fastmail.com")
 
 **Command:**
 ```bash
-axios-ai-mail auth setup-imap --email user@fastmail.com
+cairn-mail auth setup-imap --email user@fastmail.com
 ```
 
 ### 6. Provider Registration ✅
 
 **Changes:**
-- `src/axios_ai_mail/providers/__init__.py` - Registers both Gmail and IMAP providers
+- `src/cairn_mail/providers/__init__.py` - Registers both Gmail and IMAP providers
 
 **Registry:**
 ```python
@@ -121,17 +121,17 @@ ProviderRegistry.register("imap", IMAPProvider)
 
 | File | Status | Purpose |
 |------|--------|---------|
-| `src/axios_ai_mail/config/__init__.py` | Created | Config module init |
-| `src/axios_ai_mail/config/loader.py` | Created | Config file loader |
-| `src/axios_ai_mail/providers/factory.py` | Created | Provider factory |
-| `src/axios_ai_mail/providers/implementations/imap.py` | Created | IMAP provider (~410 lines) |
-| `src/axios_ai_mail/providers/server_registry.py` | Created | IMAP server auto-detection |
-| `src/axios_ai_mail/providers/__init__.py` | Modified | Register providers |
-| `src/axios_ai_mail/cli/sync.py` | Modified | Use ProviderFactory |
-| `src/axios_ai_mail/api/routes/sync.py` | Modified | Use ProviderFactory |
-| `src/axios_ai_mail/api/main.py` | Modified | Load config on startup |
-| `src/axios_ai_mail/cli/auth.py` | Modified | Add IMAP wizard |
-| `src/axios_ai_mail/credentials.py` | No change | `load_password()` already existed |
+| `src/cairn_mail/config/__init__.py` | Created | Config module init |
+| `src/cairn_mail/config/loader.py` | Created | Config file loader |
+| `src/cairn_mail/providers/factory.py` | Created | Provider factory |
+| `src/cairn_mail/providers/implementations/imap.py` | Created | IMAP provider (~410 lines) |
+| `src/cairn_mail/providers/server_registry.py` | Created | IMAP server auto-detection |
+| `src/cairn_mail/providers/__init__.py` | Modified | Register providers |
+| `src/cairn_mail/cli/sync.py` | Modified | Use ProviderFactory |
+| `src/cairn_mail/api/routes/sync.py` | Modified | Use ProviderFactory |
+| `src/cairn_mail/api/main.py` | Modified | Load config on startup |
+| `src/cairn_mail/cli/auth.py` | Modified | Add IMAP wizard |
+| `src/cairn_mail/credentials.py` | No change | `load_password()` already existed |
 
 **Total:** 5 new files, 5 modified files, ~800 lines of new code
 
@@ -141,21 +141,21 @@ ProviderRegistry.register("imap", IMAPProvider)
 
 **1. Set up IMAP account:**
 ```bash
-cd ~/Projects/axios-ai-mail
+cd ~/Projects/cairn-mail
 nix develop  # Or use existing environment
 
 # Run IMAP setup wizard
-python -m axios_ai_mail.cli.main auth setup-imap --email user@fastmail.com
+python -m cairn_mail.cli.main auth setup-imap --email user@fastmail.com
 # Follow prompts to test connection and save password
 ```
 
 **2. Add to Nix config:**
 ```nix
 # In your home.nix
-programs.axios-ai-mail.accounts.fastmail = {
+programs.cairn-mail.accounts.fastmail = {
   provider = "imap";
   email = "user@fastmail.com";
-  passwordFile = "/home/user/.local/share/axios-ai-mail/credentials/user_at_fastmail_com_imap_password.txt";
+  passwordFile = "/home/user/.local/share/cairn-mail/credentials/user_at_fastmail_com_imap_password.txt";
   imap = {
     host = "imap.fastmail.com";
     port = 993;
@@ -167,26 +167,26 @@ programs.axios-ai-mail.accounts.fastmail = {
 **3. Rebuild and test:**
 ```bash
 home-manager switch
-axios-ai-mail sync run --account fastmail --max 10
+cairn-mail sync run --account fastmail --max 10
 ```
 
 ### Option 2: Full Integration Test (After Package Rebuild)
 
 **1. Rebuild package:**
 ```bash
-cd ~/Projects/axios-ai-mail
+cd ~/Projects/cairn-mail
 nix build
 ```
 
 **2. Test with rebuilt package:**
 ```bash
-./result/bin/axios-ai-mail auth setup-imap
-./result/bin/axios-ai-mail sync run
+./result/bin/cairn-mail auth setup-imap
+./result/bin/cairn-mail sync run
 ```
 
 **3. Check web UI:**
 ```bash
-./result/bin/axios-ai-mail web
+./result/bin/cairn-mail web
 # Open http://localhost:8080
 # IMAP messages should appear alongside Gmail
 ```
@@ -194,9 +194,9 @@ nix build
 ## Verification Checklist
 
 ### Config Loader
-- [ ] Config file exists at `~/.config/axios-ai-mail/config.yaml`
+- [ ] Config file exists at `~/.config/cairn-mail/config.yaml`
 - [ ] Running sync loads config and syncs to database
-- [ ] Accounts appear in database: `sqlite3 ~/.local/share/axios-ai-mail/mail.db "SELECT * FROM accounts;"`
+- [ ] Accounts appear in database: `sqlite3 ~/.local/share/cairn-mail/mail.db "SELECT * FROM accounts;"`
 - [ ] Account settings populated correctly
 
 ### Provider Factory
@@ -233,20 +233,20 @@ nix build
 ### Fastmail (Recommended for Testing)
 1. Create Fastmail account (trial available)
 2. Generate app password at https://www.fastmail.com/settings/security/devicekeys
-3. Run: `axios-ai-mail auth setup-imap --email user@fastmail.com`
+3. Run: `cairn-mail auth setup-imap --email user@fastmail.com`
 4. Enter app password
 5. Sync and verify keywords appear in Fastmail web UI
 
 ### Gmail IMAP
 1. Enable IMAP in Gmail settings
 2. Generate app password at https://myaccount.google.com/apppasswords
-3. Run: `axios-ai-mail auth setup-imap --email user@gmail.com`
+3. Run: `cairn-mail auth setup-imap --email user@gmail.com`
 4. Sync and verify (note: Gmail IMAP may not support custom keywords - use Gmail API instead)
 
 ### ProtonMail
 1. Install and run ProtonMail Bridge
 2. Get Bridge password from Bridge app
-3. Run: `axios-ai-mail auth setup-imap --email user@protonmail.com --host 127.0.0.1 --port 1143`
+3. Run: `cairn-mail auth setup-imap --email user@protonmail.com --host 127.0.0.1 --port 1143`
 4. Enter Bridge password
 
 ## Known Limitations
@@ -264,7 +264,7 @@ nix build
 ### "Permission check failed"
 Password file must have 0600 permissions:
 ```bash
-chmod 600 ~/.local/share/axios-ai-mail/credentials/*
+chmod 600 ~/.local/share/cairn-mail/credentials/*
 ```
 
 ### "IMAP authentication failed"
@@ -279,7 +279,7 @@ Some servers don't support custom keywords. System will run in read-only mode (c
 ### Config not loading
 Check that Nix generated the config file:
 ```bash
-cat ~/.config/axios-ai-mail/config.yaml
+cat ~/.config/cairn-mail/config.yaml
 ```
 
 If missing, rebuild: `home-manager switch`

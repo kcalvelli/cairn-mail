@@ -5,11 +5,11 @@
 
 ## Summary
 
-Add optional MCP client capability to axios-ai-mail, enabling integration with external contact providers (like axios-dav's mcp-dav) for intelligent contact-aware email workflows.
+Add optional MCP client capability to cairn-mail, enabling integration with external contact providers (like cairn-dav's mcp-dav) for intelligent contact-aware email workflows.
 
 ## Problem
 
-axios-ai-mail currently has no concept of contacts. This limits AI-powered email workflows:
+cairn-mail currently has no concept of contacts. This limits AI-powered email workflows:
 
 - No recipient autocomplete or validation
 - Cannot resolve "Email John about X" to actual email addresses
@@ -28,14 +28,14 @@ axios-ai-mail currently has no concept of contacts. This limits AI-powered email
 
 - Building our own contacts storage (use existing providers)
 - Requiring contacts integration (must remain optional)
-- Tight coupling to axios-dav (just needs MCP protocol)
+- Tight coupling to cairn-dav (just needs MCP protocol)
 
 ## Design
 
 ### Configuration
 
 ```nix
-services.axios-ai-mail = {
+services.cairn-mail = {
   enable = true;
 
   integrations.contacts = {
@@ -58,7 +58,7 @@ services.axios-ai-mail = {
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      axios-ai-mail                               │
+│                      cairn-mail                               │
 │                                                                  │
 │  ┌────────────────┐    ┌─────────────────────────────────────┐  │
 │  │  Email Tools   │    │          Ollama (AI)                 │  │

@@ -17,5 +17,5 @@
 - [x] 3.3 Implement `notmuch` tagging feedback loop.
 
 ## 4. Systemd Integration
-- [x] 4.1 Create `axios-mail-sync.service` and timer.
-- [x] 4.2 Create `axios-ai-classifier.service` logic.
+- [x] 4.1 Create `cairn-mail-sync.service` and timer.
+- [x] 4.2 Create `cairn-ai-classifier.service` logic.

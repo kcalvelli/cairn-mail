@@ -115,7 +115,7 @@
 ### 3.1 Backend Maintenance Endpoints
 
 - [x] 3.1.1 Create maintenance router
-  - Add `src/axios_ai_mail/api/routes/maintenance.py`
+  - Add `src/cairn_mail/api/routes/maintenance.py`
   - Register router in main app
 
 - [x] 3.1.2 Add reclassify all endpoint

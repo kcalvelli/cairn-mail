@@ -1,16 +1,16 @@
-# axios-ai-mail
+# cairn-mail
 
 <p align="center">
-  <img src="docs/axios-ai-mail.png" alt="axios-ai-mail logo" width="200" />
+  <img src="docs/cairn-mail.png" alt="cairn-mail logo" width="200" />
 </p>
 
 **AI-powered inbox organizer for NixOS and Home Manager users.**
 
-axios-ai-mail is a declarative email management system that combines direct provider integration (Gmail, IMAP) with local AI classification to automatically organize your inbox. Messages are tagged, prioritized, and organized—all locally, with zero cloud dependencies for AI processing.
+cairn-mail is a declarative email management system that combines direct provider integration (Gmail, IMAP) with local AI classification to automatically organize your inbox. Messages are tagged, prioritized, and organized—all locally, with zero cloud dependencies for AI processing.
 
 ![Desktop Dark Mode - Split Pane View](docs/screenshots/desktop-dark-split-pane.png)
 
-> **Note:** This application is designed for users of [axiOS](https://github.com/kcalvelli/axios), a NixOS configuration framework. The instructions below assume axiOS conventions (agenix for secrets, `~/.config/nixos_config` for configuration). Non-axiOS NixOS users may need to adapt paths and secret management approaches to their setup.
+> **Note:** This application is designed for users of [Cairn](https://github.com/kcalvelli/cairn), a NixOS configuration framework. The instructions below assume Cairn conventions (agenix for secrets, `~/.config/nixos_config` for configuration). Non-Cairn NixOS users may need to adapt paths and secret management approaches to their setup.
 
 ## Quick Links
 
@@ -42,7 +42,7 @@ axios-ai-mail is a declarative email management system that combines direct prov
 - **Create Reminder** - Tag an email to create a calendar event from mentioned dates
 - **Custom Actions** - Define your own actions that call any MCP tool
 - **Toast Notifications** - Visual confirmation when actions succeed or fail
-- **Requires:** [axios-dav](https://github.com/kcalvelli/axios-dav) + [mcp-gateway](https://github.com/kcalvelli/mcp-gateway) — see [Action Tags Guide](docs/ACTION_TAGS.md)
+- **Requires:** [cairn-dav](https://github.com/kcalvelli/cairn-dav) + [mcp-gateway](https://github.com/kcalvelli/mcp-gateway) — see [Action Tags Guide](docs/ACTION_TAGS.md)
 
 ### Email Management
 - **Multi-Account** - Manage Gmail and IMAP accounts from a single interface
@@ -126,7 +126,7 @@ Full keyboard shortcut support for power users:
 
 ### Split Architecture
 
-axios-ai-mail uses a split architecture:
+cairn-mail uses a split architecture:
 
 | Module | Level | Purpose |
 |--------|-------|---------|
@@ -140,21 +140,21 @@ axios-ai-mail uses a split architecture:
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
-    axios-ai-mail.url = "github:kcalvelli/axios-ai-mail";
+    cairn-mail.url = "github:kcalvelli/cairn-mail";
   };
 
-  outputs = { nixpkgs, home-manager, axios-ai-mail, ... }: {
+  outputs = { nixpkgs, home-manager, cairn-mail, ... }: {
     nixosConfigurations.yourhost = nixpkgs.lib.nixosSystem {
       modules = [
         # 1. Apply overlay
-        { nixpkgs.overlays = [ axios-ai-mail.overlays.default ]; }
+        { nixpkgs.overlays = [ cairn-mail.overlays.default ]; }
 
         # 2. Import NixOS module
-        axios-ai-mail.nixosModules.default
+        cairn-mail.nixosModules.default
 
         # 3. Enable services
         {
-          services.axios-ai-mail = {
+          services.cairn-mail = {
             enable = true;
             port = 8080;
             user = "youruser";
@@ -165,9 +165,9 @@ axios-ai-mail uses a split architecture:
         home-manager.nixosModules.home-manager
         {
           home-manager.users.youruser = { ... }: {
-            imports = [ axios-ai-mail.homeManagerModules.default ];
+            imports = [ cairn-mail.homeManagerModules.default ];
 
-            programs.axios-ai-mail = {
+            programs.cairn-mail = {
               enable = true;
               ai.model = "llama3.2";
               accounts.gmail = {
@@ -200,7 +200,7 @@ Once enabled, the web UI runs automatically as a systemd service:
 
 ```bash
 # Check status
-systemctl status axios-ai-mail-web.service
+systemctl status cairn-mail-web.service
 ```
 
 Open http://localhost:8080 in your browser.
@@ -211,18 +211,18 @@ Email sync runs automatically via systemd timer:
 
 ```bash
 # Check sync timer
-systemctl status axios-ai-mail-sync.timer
+systemctl status cairn-mail-sync.timer
 
 # Trigger manual sync
-sudo systemctl start axios-ai-mail-sync.service
+sudo systemctl start cairn-mail-sync.service
 
 # View sync logs
-sudo journalctl -u axios-ai-mail-sync.service -f
+sudo journalctl -u cairn-mail-sync.service -f
 ```
 
 ### MCP Server for AI Assistants
 
-axios-ai-mail includes an MCP (Model Context Protocol) server that allows AI assistants like Claude to automate email workflows through natural language.
+cairn-mail includes an MCP (Model Context Protocol) server that allows AI assistants like Claude to automate email workflows through natural language.
 
 **Available Tools:**
 
@@ -249,8 +249,8 @@ Add to your Claude Desktop config (`~/.config/claude/claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "axios-ai-mail": {
-      "command": "axios-ai-mail",
+    "cairn-mail": {
+      "command": "cairn-mail",
       "args": ["mcp"]
     }
   }
@@ -261,13 +261,13 @@ Add to your Claude Desktop config (`~/.config/claude/claude_desktop_config.json`
 
 ```bash
 # Start MCP server manually (for testing)
-axios-ai-mail mcp
+cairn-mail mcp
 
 # With custom API URL
-axios-ai-mail mcp --api-url http://localhost:9000
+cairn-mail mcp --api-url http://localhost:9000
 
 # Show available tools
-axios-ai-mail mcp info
+cairn-mail mcp info
 ```
 
 > **Note:** The web service must be running for the MCP server to work.
@@ -292,7 +292,7 @@ axios-ai-mail mcp info
 
 ## Product Scope
 
-**axios-ai-mail is an inbox organizer, not a spam filter.**
+**cairn-mail is an inbox organizer, not a spam filter.**
 
 ### What This Product Does
 - Classifies legitimate mail that reached your inbox
@@ -357,9 +357,9 @@ Built with:
 - [Zustand](https://zustand-demo.pmnd.rs/) - State management
 
 Integrates with:
-- [axios-dav](https://github.com/kcalvelli/axios-dav) - CalDAV/CardDAV sync with MCP server
+- [cairn-dav](https://github.com/kcalvelli/cairn-dav) - CalDAV/CardDAV sync with MCP server
 - [mcp-gateway](https://github.com/kcalvelli/mcp-gateway) - REST API gateway for MCP servers
 
 ---
 
-**axios-ai-mail** - Organize your inbox with AI, locally.
+**cairn-mail** - Organize your inbox with AI, locally.

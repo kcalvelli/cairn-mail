@@ -1,7 +1,7 @@
 # Change: Bootstrap Project Architecture
 
 ## Why
-To establish the foundational architecture for `axios-ai-mail`, providing a declarative configuration system, automated mail synchronization, and local AI-driven classification.
+To establish the foundational architecture for `cairn-mail`, providing a declarative configuration system, automated mail synchronization, and local AI-driven classification.
 
 ## What Changes
 - **Configuration**: Define a central YAML/TOML spec and a generator for `mbsync`, `msmtp`, and `notmuch` configs.

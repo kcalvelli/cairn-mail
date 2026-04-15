@@ -1,4 +1,4 @@
-"""Configuration management for axios-ai-mail."""
+"""Configuration management for cairn-mail."""
 
 from .loader import ConfigLoader
 from .tags import (

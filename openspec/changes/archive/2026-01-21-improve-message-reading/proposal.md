@@ -74,7 +74,7 @@ The current message reading experience is functional but basic. Users need a ric
   - `web/src/components/SenderAvatar.tsx` - NEW
   - `web/src/hooks/useKeyboardNavigation.ts` - NEW
   - `web/src/hooks/useThread.ts` - NEW
-  - `src/axios_ai_mail/api/routes/messages.py` - Thread grouping endpoint
+  - `src/cairn_mail/api/routes/messages.py` - Thread grouping endpoint
 
 - **New dependencies:**
   - None required (Gravatar is URL-based)

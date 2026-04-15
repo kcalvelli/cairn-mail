@@ -19,22 +19,22 @@ def mcp_main(
         "http://localhost:8080",
         "--api-url",
         "-u",
-        help="Base URL of the axios-ai-mail API",
+        help="Base URL of the cairn-mail API",
     ),
 ) -> None:
     """Start the MCP server.
 
     The MCP server exposes email operations as tools for AI assistants.
-    It communicates via stdio and calls the axios-ai-mail REST API.
+    It communicates via stdio and calls the cairn-mail REST API.
 
     Make sure the web service is running before starting the MCP server:
-        systemctl status axios-ai-mail-web.service
+        systemctl status cairn-mail-web.service
 
     Example AI assistant configuration (Claude Desktop):
         {
           "mcpServers": {
-            "axios-ai-mail": {
-              "command": "axios-ai-mail",
+            "cairn-mail": {
+              "command": "cairn-mail",
               "args": ["mcp"]
             }
           }
@@ -57,7 +57,7 @@ def mcp_info() -> None:
     """Show information about available MCP tools."""
     from rich.table import Table
 
-    table = Table(title="axios-ai-mail MCP Tools")
+    table = Table(title="cairn-mail MCP Tools")
     table.add_column("Tool", style="cyan")
     table.add_column("Description", style="white")
 
@@ -77,4 +77,4 @@ def mcp_info() -> None:
 
     console.print(table)
     console.print()
-    console.print("[dim]Run 'axios-ai-mail mcp' to start the MCP server.[/dim]")
+    console.print("[dim]Run 'cairn-mail mcp' to start the MCP server.[/dim]")

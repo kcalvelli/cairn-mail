@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide an MCP (Model Context Protocol) server that exposes axios-ai-mail's email capabilities as tools for AI assistants, enabling natural language email automation workflows.
+Provide an MCP (Model Context Protocol) server that exposes cairn-mail's email capabilities as tools for AI assistants, enabling natural language email automation workflows.
 
 ## ADDED Requirements
 
@@ -12,15 +12,15 @@ The system SHALL provide an MCP server that starts via CLI and communicates over
 
 #### Scenario: Starting MCP server
 
-- **GIVEN** axios-ai-mail is installed
-- **WHEN** user runs `axios-ai-mail mcp`
+- **GIVEN** cairn-mail is installed
+- **WHEN** user runs `cairn-mail mcp`
 - **THEN** an MCP server starts listening on stdio
 - **AND** the server advertises available tools to the client
 
 #### Scenario: Custom API URL
 
 - **GIVEN** the web API is running on a non-default port
-- **WHEN** user runs `axios-ai-mail mcp --api-url http://localhost:9000`
+- **WHEN** user runs `cairn-mail mcp --api-url http://localhost:9000`
 - **THEN** the MCP server connects to the specified API URL
 
 #### Scenario: API not reachable
@@ -28,7 +28,7 @@ The system SHALL provide an MCP server that starts via CLI and communicates over
 - **GIVEN** the web API is not running
 - **WHEN** an MCP tool is invoked
 - **THEN** the tool returns an error indicating the API is unreachable
-- **AND** suggests checking that the axios-ai-mail web service is running
+- **AND** suggests checking that the cairn-mail web service is running
 
 ### Requirement: List Accounts Tool
 

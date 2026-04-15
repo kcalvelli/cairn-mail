@@ -1,4 +1,4 @@
-"""MCP (Model Context Protocol) server for axios-ai-mail.
+"""MCP (Model Context Protocol) server for cairn-mail.
 
 This module provides an MCP server that exposes email operations as tools
 for AI assistants to automate email workflows.

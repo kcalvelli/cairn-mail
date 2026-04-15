@@ -1,4 +1,4 @@
-"""MCP tool implementations for axios-ai-mail.
+"""MCP tool implementations for cairn-mail.
 
 This module contains all the MCP tools that expose email operations
 to AI assistants.
@@ -9,7 +9,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from .client import APIConnectionError, APIError, AxiosMailClient
+from .client import APIConnectionError, APIError, CairnMailClient
 from .utils import (
     AccountResolutionError,
     normalize_email_list,
@@ -19,12 +19,12 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-def register_tools(mcp: FastMCP, client: AxiosMailClient) -> None:
+def register_tools(mcp: FastMCP, client: CairnMailClient) -> None:
     """Register all MCP tools with the server.
 
     Args:
         mcp: FastMCP server instance
-        client: AxiosMailClient instance for API calls
+        client: CairnMailClient instance for API calls
     """
 
     @mcp.tool()

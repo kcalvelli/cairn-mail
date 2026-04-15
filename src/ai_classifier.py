@@ -15,7 +15,7 @@ except ImportError:
 
 def load_config():
     config_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-    settings_path = pathlib.Path(config_dir) / "axios-ai-mail" / "config.json"
+    settings_path = pathlib.Path(config_dir) / "cairn-mail" / "config.json"
     
     if not settings_path.exists():
         return {}

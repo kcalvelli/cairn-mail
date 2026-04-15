@@ -1,4 +1,4 @@
-"""SQLAlchemy models for axios-ai-mail database."""
+"""SQLAlchemy models for cairn-mail database."""
 
 from datetime import datetime
 from typing import Dict, List, Optional
