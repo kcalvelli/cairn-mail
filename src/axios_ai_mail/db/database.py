@@ -78,7 +78,20 @@ class Database:
 
                 conn.commit()
             except Exception as e:
-                logger.warning(f"Migration check failed (table may not exist yet): {e}")
+                logger.warning(f"Feedback migration check failed: {e}")
+
+            # Add consecutive_empty_syncs to accounts table if missing
+            try:
+                result = conn.execute(text("PRAGMA table_info(accounts)"))
+                columns = {row[1] for row in result.fetchall()}
+                if "consecutive_empty_syncs" not in columns:
+                    logger.info("Migration: Adding consecutive_empty_syncs to accounts table")
+                    conn.execute(text(
+                        "ALTER TABLE accounts ADD COLUMN consecutive_empty_syncs INTEGER NOT NULL DEFAULT 0"
+                    ))
+                    conn.commit()
+            except Exception as e:
+                logger.warning(f"Accounts migration check failed: {e}")
 
     @contextmanager
     def session(self) -> Generator[Session, None, None]:
