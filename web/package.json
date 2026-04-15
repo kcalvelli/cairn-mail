@@ -21,7 +21,7 @@
     "@tiptap/react": "^2.1.13",
     "@tiptap/starter-kit": "^2.1.13",
     "@types/md5": "^2.3.6",
-    "cairn": "^1.6.7",
+    "axios": "^1.6.7",
     "dompurify": "^3.0.8",
     "idb-keyval": "^6.2.1",
     "md5": "^2.3.0",
