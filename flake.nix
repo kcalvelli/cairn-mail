@@ -172,14 +172,6 @@
         type = "app";
         program = "${cairn-mail}/bin/cairn-mail";
       };
-
-      # Legacy v1 scripts (kept for backward compatibility)
-      auth-v1 = {
-        type = "app";
-        program = "${pkgs.writeShellScriptBin "auth" ''
-          ${pkgs.python3}/bin/python3 ${./src/mutt_oauth2.py} "$@"
-        ''}/bin/auth";
-      };
     });
   };
 }
