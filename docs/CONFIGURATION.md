@@ -197,38 +197,66 @@ accounts.work = {
 | `labels.prefix` | string | No | AI label prefix (default: "AI") |
 | `labels.colors` | attrset | No | Per-account color overrides |
 | `sync.enableWebhooks` | boolean | No | Enable push notifications |
+| `hidden` | boolean | No | Hide account from default UI views (default: `false`) |
+
+#### Hidden Accounts
+
+Set `hidden = true` to keep an account out of the default web UI without disabling it. The account still syncs on schedule and is fully accessible via the MCP server, but it's excluded from `GET /accounts` and `GET /messages` unless the caller explicitly opts in (`include_hidden=true` or an explicit `account_id` filter).
+
+This is useful for agent/bot accounts you don't want cluttering your inbox view:
+
+```nix
+accounts.bot = {
+  provider = "imap";
+  email = "ci-alerts@example.com";
+  passwordFile = config.age.secrets.bot-password.path;
+  hidden = true;            # Stays out of the UI; MCP/agents still see it
+  imap = { host = "..."; port = 993; tls = true; };
+};
+```
 
 ### AI Configuration
 
+cairn-mail talks to any **OpenAI-compatible `/v1/chat/completions` endpoint**. The defaults below assume an [openai-gateway](https://github.com/kcalvelli/openai-gateway) on `localhost:18789`, but Ollama, llama.cpp, vLLM, LiteLLM, or a hosted API all work the same way.
+
 ```nix
 ai = {
-  enable = true;                        # Default: true
-  model = "llama3.2";                   # Ollama model name
-  endpoint = "http://localhost:11434";  # Ollama API URL
-  temperature = 0.3;                    # LLM temperature (0.0-1.0)
+  enable = true;                              # Default: true
+  model = "claude-sonnet-4-20250514";         # Any model the endpoint exposes
+  endpoint = "http://localhost:18789";        # Any OpenAI-compatible /v1 endpoint
+  temperature = 0.3;                          # LLM temperature (0.0-1.0)
 
   # Tag taxonomy
-  useDefaultTags = true;                # Use built-in 35-tag taxonomy
-  tags = [];                            # Additional custom tags
-  excludeTags = [];                     # Tags to remove from defaults
+  useDefaultTags = true;                      # Use built-in 35-tag taxonomy
+  tags = [];                                  # Additional custom tags
+  excludeTags = [];                           # Tags to remove from defaults
 
   # Label styling
-  labelPrefix = "AI";                   # Prefix for provider labels
-  labelColors = {};                     # Tag color overrides
+  labelPrefix = "AI";                         # Prefix for provider labels
+  labelColors = {};                           # Tag color overrides
 };
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `enable` | boolean | `true` | Enable AI classification |
-| `model` | string | `"llama3.2"` | Ollama model name |
-| `endpoint` | string | `"http://localhost:11434"` | Ollama API URL |
+| `model` | string | `"claude-sonnet-4-20250514"` | Model name your endpoint exposes |
+| `endpoint` | string | `"http://localhost:18789"` | OpenAI-compatible API base URL |
 | `temperature` | float | `0.3` | LLM temperature (0.0-1.0) |
 | `useDefaultTags` | boolean | `true` | Use built-in tag taxonomy |
 | `tags` | list | `[]` | Additional custom tags |
 | `excludeTags` | list | `[]` | Tags to exclude from defaults |
 | `labelPrefix` | string | `"AI"` | Prefix for provider labels |
 | `labelColors` | attrset | `{}` | Tag color overrides |
+
+**Pointing at local Ollama instead:**
+
+```nix
+ai = {
+  model = "llama3.2";
+  endpoint = "http://localhost:11434";
+};
+```
 
 **Temperature guidelines:**
 - `0.1-0.3` - Highly deterministic, best for classification
@@ -290,7 +318,7 @@ actions = {
 | `actions.<name>.description` | string | `""` | Human-readable description |
 | `actions.<name>.server` | string | *required* | MCP server ID in mcp-gateway |
 | `actions.<name>.tool` | string | *required* | MCP tool name to call |
-| `actions.<name>.extractionPrompt` | string or null | `null` | Custom Ollama extraction prompt |
+| `actions.<name>.extractionPrompt` | string or null | `null` | Custom LLM extraction prompt (uses `ai.endpoint`) |
 | `actions.<name>.defaultArgs` | attrset | `{}` | Static arguments for the tool |
 | `actions.<name>.enabled` | boolean | `true` | Enable/disable this action |
 
@@ -298,23 +326,22 @@ actions = {
 
 ## AI Model Recommendations
 
-### Quick Recommendations
+cairn-mail's classification job is small: a few hundred tokens of prompt, a JSON object back. Almost any modern instruction-tuned model handles it. Pick whatever your endpoint exposes; the defaults are tuned conservatively (`temperature = 0.3`).
 
-| Use Case | Model | VRAM | Speed |
+### Local Models (Ollama)
+
+If you're running Ollama locally, these are reasonable starting points:
+
+| Use Case | Model | VRAM | Notes |
 |----------|-------|------|-------|
-| **Best Overall** | `llama3.2` | 4GB | 2-3s/msg |
-| **Low VRAM** | `qwen2.5:3b` | 2GB | 1-2s/msg |
-| **Maximum Quality** | `llama3.1:8b` | 8GB | 4-5s/msg |
-| **Fastest** | `qwen2.5:1.5b` | 1.5GB | <1s/msg |
+| **Balanced** | `llama3.2` | 4GB | Solid default for tagging |
+| **Low VRAM** | `qwen2.5:3b` | 2GB | Faster, slightly less accurate |
+| **CPU-only / fastest** | `qwen2.5:1.5b` | <2GB | Works without a GPU |
+| **Maximum quality** | `llama3.1:8b` | 8GB | Diminishing returns for tagging |
 
-### Hardware Requirements
+### Hosted / Gateway Models
 
-| Setup | RAM | VRAM | Recommended Model |
-|-------|-----|------|-------------------|
-| CPU-only | 8GB+ | - | `qwen2.5:1.5b` |
-| Entry GPU | - | 2-4GB | `qwen2.5:3b` |
-| Mid-range GPU | - | 4-8GB | `llama3.2` |
-| High-end GPU | - | 8GB+ | `llama3.1:8b` |
+When routing through a gateway (LiteLLM, openai-gateway, etc.), pick whatever your provider exposes. Anthropic Claude Sonnet 4, OpenAI GPT-4-class, and Mistral all work. Choose based on cost-per-message and latency rather than raw quality — classification rarely needs the largest model.
 
 ---
 
@@ -455,8 +482,8 @@ programs.cairn-mail = {
 
   ai = {
     enable = true;
-    model = "llama3.2";
-    endpoint = "http://localhost:11434";
+    model = "claude-sonnet-4-20250514";
+    endpoint = "http://localhost:18789";
     temperature = 0.3;
     useDefaultTags = true;
 
@@ -507,18 +534,19 @@ programs.cairn-mail = {
 };
 ```
 
-### Low-Resource Setup
+### Low-Resource Setup (local Ollama)
 
-For systems with limited RAM/VRAM:
+For systems with limited RAM/VRAM running a local LLM:
 
 ```nix
 programs.cairn-mail = {
   enable = true;
 
   ai = {
-    model = "qwen2.5:1.5b";  # Smallest model
-    temperature = 0.2;       # More deterministic
-    useDefaultTags = false;  # Fewer tags = faster
+    model = "qwen2.5:1.5b";              # Smallest model
+    endpoint = "http://localhost:11434"; # Local Ollama
+    temperature = 0.2;                   # More deterministic
+    useDefaultTags = false;              # Fewer tags = faster
 
     tags = [
       { name = "work"; description = "Work emails"; }

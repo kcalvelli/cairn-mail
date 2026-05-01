@@ -38,20 +38,21 @@ cairn-mail is a layered architecture with clear separation of concerns:
 └───────┬───────────────────────┬───────────────────────┬─────────┘
         │                       │                       │
         ▼                       ▼                       ▼
-┌───────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Sync Engine  │    │  AI Classifier   │    │    Database     │
-│  • Providers  │    │  • Ollama Client │    │   • SQLAlchemy  │
-│  • Gmail API  │    │  • Tag Taxonomy  │    │   • SQLite FTS  │
-│  • IMAP       │    │  • Confidence    │    │   • Migrations  │
-└───────────────┘    └──────────────────┘    └─────────────────┘
+┌───────────────┐    ┌──────────────────────┐    ┌─────────────────┐
+│  Sync Engine  │    │   AI Classifier      │    │    Database     │
+│  • Providers  │    │  • OpenAI-compat     │    │   • SQLAlchemy  │
+│  • Gmail API  │    │    /v1/chat client   │    │   • SQLite FTS  │
+│  • IMAP       │    │  • Tag Taxonomy      │    │   • Migrations  │
+│               │    │  • Confidence        │    │                 │
+└───────────────┘    └──────────────────────┘    └─────────────────┘
 ```
 
 ### Design Principles
 
 1. **Declarative Configuration** - Nix module generates all runtime config
 2. **Provider Abstraction** - Unified interface for different email providers
-3. **Local-First** - All data stored locally, no cloud dependencies
-4. **Privacy-First** - AI runs locally via Ollama, no external API calls
+3. **Local-First Storage** - All mail metadata, tags, and state stored locally in SQLite
+4. **Bring-Your-Own LLM** - AI calls go to any OpenAI-compatible endpoint you configure (run locally for full privacy, or route through a gateway to a hosted model)
 5. **Idempotent Operations** - Sync and config operations are safe to repeat
 
 ---
@@ -68,11 +69,11 @@ cairn-mail is a layered architecture with clear separation of concerns:
 └─────────────┘     └─────────────┘     └──────┬──────┘
                                                │
                                                ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Provider   │◀────│   Tagger    │◀────│     AI      │
-│  (Update    │     │  (Apply     │     │  Classifier │
-│   labels)   │     │   tags)     │     │  (Ollama)   │
-└─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌──────────────────┐
+│  Provider   │◀────│   Tagger    │◀────│      AI          │
+│  (Update    │     │  (Apply     │     │  Classifier      │
+│   labels)   │     │   tags)     │     │ (OpenAI-compat)  │
+└─────────────┘     └─────────────┘     └──────────────────┘
 ```
 
 ### Request/Response Flow
@@ -256,6 +257,22 @@ OnUnitActiveSec=5min
 Persistent=true
 ```
 
+### Sync Behaviors
+
+The sync engine includes several efficiency and resilience features beyond plain "fetch new mail":
+
+**Adaptive backoff for quiet accounts.** Each `Account` row tracks `consecutive_empty_syncs`. After 3 syncs in a row that returned no new messages, that account is only synced every other cycle; after more empty syncs, every fourth. Any new mail resets the counter. This keeps long-tail / mostly-idle accounts from burning cycles without delaying active ones.
+
+**Inbox-only classification.** The classifier only runs against `INBOX`. Messages in `SENT` and `TRASH` are stored and indexed, but never tagged — there's no value in classifying mail you wrote or already discarded.
+
+**Stale-message purge.** After fetching from a provider, any local message that the provider no longer reports for that folder is deleted from the DB. The provider is treated as authoritative; the local store is a cache.
+
+**Ghost-account reaping.** When `~/.config/cairn-mail/config.yaml` is reloaded, any DB account that no longer appears in the config is removed (cascade-deletes its messages, classifications, and pending operations). This cleans up after `nixos-rebuild switch` removes an account from your home-manager config.
+
+**IMAP connection timeout.** IMAP connects use a 30-second socket timeout. Previously, a stale pooled connection on a flaky network could hang the sync indefinitely.
+
+**`account_id`-scoped unread counts.** `GET /messages/unread-count` accepts an optional `account_id` query param so multi-account UIs and MCP callers can show per-account badges without pulling the whole message list.
+
 ### Async Provider Sync (Pending Operations Queue)
 
 User actions (mark read, delete, restore) update the local database immediately for instant UI feedback. Provider synchronization happens asynchronously in the background via a pending operations queue.
@@ -325,11 +342,12 @@ Pending operations are processed at the **start** of each sync cycle, before fet
 └──────┬──────┘
        │
        ▼
-┌─────────────┐
-│   Ollama    │
-│   API Call  │
-│  (local LLM)│
-└──────┬──────┘
+┌──────────────────┐
+│  OpenAI-compat   │
+│   API Call       │
+│ /v1/chat/        │
+│   completions    │
+└─────────┬────────┘
        │
        ▼
 ┌─────────────┐
@@ -660,8 +678,8 @@ class ConfigLoader:
   },
   "ai": {
     "enable": true,
-    "model": "llama3.2",
-    "endpoint": "http://localhost:11434",
+    "model": "claude-sonnet-4-20250514",
+    "endpoint": "http://localhost:18789",
     "temperature": 0.3
   }
 }

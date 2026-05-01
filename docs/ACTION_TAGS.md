@@ -9,7 +9,8 @@ Action tags let you trigger real-world actions from your inbox. Tag an email wit
    ↓
 2. Next sync cycle runs                     (every 5 min, or trigger manually)
    ↓
-3. Ollama extracts structured data          (name, email, phone from signature)
+3. The configured LLM extracts structured   (name, email, phone from signature)
+   data via /v1/chat/completions
    ↓
 4. MCP tool is called via mcp-gateway       (creates contact in your addressbook)
    ↓
@@ -25,21 +26,13 @@ If something goes wrong, the tag stays on the message and retries next sync (up 
 | `add-contact` | Creates a contact from the email sender's info (name, email, org, phone from signature) | `mcp-dav/create_contact` |
 | `create-reminder` | Creates a calendar event from dates, deadlines, or events mentioned in the email | `mcp-dav/create_event` |
 
-Both actions use Ollama to intelligently extract data from the email content and headers. The extraction runs at low temperature (0.1) for consistent, structured output.
+Both actions reuse cairn-mail's configured LLM endpoint (`programs.cairn-mail.ai`) to extract data from the email content and headers. Extraction runs at low temperature (0.1) for consistent, structured output. Whatever OpenAI-compatible endpoint you use for classification handles action-tag extraction too — there's nothing extra to set up on the AI side.
 
 ## Prerequisites
 
-Action tags require three external services running alongside cairn-mail:
+Beyond a working cairn-mail install (which already has an LLM endpoint configured under `ai.endpoint`), action tags need two external services:
 
-### 1. Ollama
-
-Local LLM runtime used for extracting structured data from emails.
-
-- **Website:** [ollama.com](https://ollama.com)
-- **GitHub:** [github.com/ollama/ollama](https://github.com/ollama/ollama)
-- Pull a model: `ollama pull llama3.2`
-
-### 2. cairn-dav (includes mcp-dav)
+### 1. cairn-dav (includes mcp-dav)
 
 Provides CalDAV/CardDAV sync and the MCP server that action tags call to create contacts and calendar events. mcp-dav is a component within the cairn-dav project.
 
@@ -47,7 +40,7 @@ Provides CalDAV/CardDAV sync and the MCP server that action tags call to create 
 - Provides: vdirsyncer integration, khal (calendar CLI), khard (contacts CLI), and the mcp-dav MCP server
 - Must be configured with your CalDAV/CardDAV provider (Google, Fastmail, Nextcloud, etc.)
 
-### 3. mcp-gateway
+### 2. mcp-gateway
 
 REST API gateway that exposes MCP servers (like mcp-dav) over HTTP. Action tags call tools through this gateway.
 
@@ -58,19 +51,19 @@ REST API gateway that exposes MCP servers (like mcp-dav) over HTTP. Action tags 
 ### Architecture
 
 ```
-cairn-mail                    mcp-gateway                 mcp-dav
-┌──────────────┐   HTTP POST    ┌─────────────┐   MCP      ┌───────────────┐
-│ Action Agent │ ──────────────→│ REST API    │ ─────────→ │ create_contact│
-│              │  /api/tools/   │ :8085       │            │ create_event  │
-│ Ollama ←─────│  mcp-dav/     └─────────────┘            │ list_contacts │
-│ (extraction) │  create_contact                           └───────┬───────┘
-└──────────────┘                                                   │
-                                                            vdirsyncer
-                                                           ┌───────▼───────┐
-                                                           │ Google Cal    │
-                                                           │ Google Contacts│
-                                                           │ Fastmail, etc.│
-                                                           └───────────────┘
+cairn-mail                       mcp-gateway                 mcp-dav
+┌────────────────┐   HTTP POST    ┌─────────────┐   MCP      ┌───────────────┐
+│ Action Agent   │ ──────────────→│ REST API    │ ─────────→ │ create_contact│
+│                │  /api/tools/   │ :8085       │            │ create_event  │
+│ /v1/chat ◀─────│  mcp-dav/     └─────────────┘            │ list_contacts │
+│ (extraction)   │  create_contact                           └───────┬───────┘
+└────────────────┘                                                   │
+                                                              vdirsyncer
+                                                             ┌───────▼───────┐
+                                                             │ Google Cal     │
+                                                             │ Google Contacts│
+                                                             │ Fastmail, etc. │
+                                                             └────────────────┘
 ```
 
 ## Configuration
@@ -225,7 +218,7 @@ actions = {
 | `description` | string | `""` | Human-readable description shown in the UI |
 | `server` | string | *required* | MCP server ID in mcp-gateway |
 | `tool` | string | *required* | MCP tool name to call |
-| `extractionPrompt` | string or null | `null` | Custom Ollama prompt (null = use built-in) |
+| `extractionPrompt` | string or null | `null` | Custom LLM prompt sent to `ai.endpoint` (null = built-in) |
 | `defaultArgs` | attrset | `{}` | Static arguments merged with extracted data |
 | `enabled` | boolean | `true` | Enable/disable this action |
 

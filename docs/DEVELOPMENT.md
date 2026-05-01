@@ -20,7 +20,7 @@ Guide for setting up and contributing to cairn-mail.
 ### Prerequisites
 
 - **Nix** with flakes enabled
-- **Ollama** for AI classification testing
+- **An OpenAI-compatible LLM endpoint** for classifier/action-tag testing — local Ollama, llama.cpp, vLLM, or a gateway like LiteLLM all work
 - **Node.js 20+** (provided by nix develop)
 - **Python 3.11+** (provided by nix develop)
 
@@ -66,8 +66,9 @@ npm --version      # 10.x.x
 |----------|---------|-------------|
 | `DATABASE_PATH` | `~/.local/share/cairn-mail/mail.db` | SQLite database path |
 | `CONFIG_PATH` | `~/.config/cairn-mail/config.yaml` | Runtime config path |
-| `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint |
 | `LOG_LEVEL` | `INFO` | Logging level |
+
+> **Note:** The AI endpoint is read from `config.yaml` (`ai.endpoint`), not an environment variable.
 
 ---
 

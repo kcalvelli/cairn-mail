@@ -6,7 +6,7 @@
 
 **AI-powered inbox organizer for NixOS and Home Manager users.**
 
-cairn-mail is a declarative email management system that combines direct provider integration (Gmail, IMAP) with local AI classification to automatically organize your inbox. Messages are tagged, prioritized, and organized—all locally, with zero cloud dependencies for AI processing.
+cairn-mail is a declarative email management system that combines direct provider integration (Gmail, IMAP) with AI classification to automatically organize your inbox. Messages are tagged, prioritized, and organized — and you bring your own LLM via any OpenAI-compatible endpoint (run Ollama or llama.cpp locally for full privacy, or route through a gateway to a hosted model).
 
 ![Desktop Dark Mode - Split Pane View](docs/screenshots/desktop-dark-split-pane.png)
 
@@ -27,7 +27,7 @@ cairn-mail is a declarative email management system that combines direct provide
 - **Automatic Tagging** - Messages tagged with categories like `work`, `finance`, `personal`, `shopping`
 - **Confidence Scores** - Color-coded indicators show AI classification confidence
 - **Customizable Taxonomy** - Define your own tags and categories in Nix
-- **Local Processing** - All AI runs via Ollama, nothing leaves your machine
+- **Bring Your Own LLM** - Any OpenAI-compatible endpoint works (Ollama, llama.cpp, vLLM, LiteLLM, openai-gateway, hosted APIs)
 
 ### Modern Web Interface
 - **Responsive Design** - Works on desktop and mobile devices
@@ -46,10 +46,12 @@ cairn-mail is a declarative email management system that combines direct provide
 
 ### Email Management
 - **Multi-Account** - Manage Gmail and IMAP accounts from a single interface
+- **Hidden Accounts** - Mark agent/bot accounts as `hidden` so they sync but stay out of the default UI
 - **Folder Support** - Browse Inbox, Sent, Drafts, and Trash
 - **Bulk Operations** - Select multiple messages for batch actions
 - **Compose & Reply** - Full email composition with rich text formatting
 - **Attachments** - View and download attachments
+- **Adaptive Sync** - Quiet accounts back off automatically; busy ones stay current
 
 ### Mobile Experience
 - **Touch-Optimized** - Swipe gestures for common actions
@@ -98,13 +100,14 @@ Full keyboard shortcut support for power users:
 │  REST API • WebSocket • Message Management • Sync       │
 └──┬──────────────────────────────┬────────────────┬──────┘
    │                              │                │
-   │ Gmail API / IMAP            │ Ollama API     │ mcp-gateway
-   │                              │                │
+   │ Gmail API / IMAP            │ /v1/chat       │ mcp-gateway
+   │                              │ /completions   │
 ┌──▼────────────────┐  ┌─────────▼──────┐  ┌──────▼──────────┐
 │  Email Providers  │  │ AI Classifier  │  │  Action Agent   │
-│  • Gmail (OAuth2) │  │ • Local LLM    │  │  • add-contact  │
+│  • Gmail (OAuth2) │  │ • OpenAI-compat│  │  • add-contact  │
 │  • IMAP (Password)│  │ • Tag/Priority │  │  • create-event │
-│  • Fastmail, etc. │  │ • No cloud API │  │  → mcp-dav      │
+│  • Fastmail, etc. │  │ • Bring-your-  │  │  → mcp-dav      │
+│                   │  │   own LLM      │  │                 │
 └───────────────────┘  └────────────────┘  └─────────────────┘
            │
            │ SQLite
@@ -122,7 +125,10 @@ Full keyboard shortcut support for power users:
 ### Prerequisites
 
 1. **NixOS with flakes** - Runs as system-level services
-2. **Ollama** - For local AI classification (`ollama pull llama3.2`)
+2. **An OpenAI-compatible LLM endpoint** - Any `/v1/chat/completions` provider works:
+   - Local: [Ollama](https://ollama.com), [llama.cpp](https://github.com/ggerganov/llama.cpp), [vLLM](https://github.com/vllm-project/vllm)
+   - Gateway/proxy: [LiteLLM](https://github.com/BerriAI/litellm), [openai-gateway](https://github.com/kcalvelli/openai-gateway)
+   - Hosted: any OpenAI-compatible API
 
 ### Split Architecture
 
@@ -169,7 +175,12 @@ cairn-mail uses a split architecture:
 
             programs.cairn-mail = {
               enable = true;
-              ai.model = "llama3.2";
+              ai = {
+                # Defaults to "claude-sonnet-4-20250514" via http://localhost:18789.
+                # Point endpoint at any OpenAI-compatible /v1/chat/completions provider.
+                model = "claude-sonnet-4-20250514";
+                endpoint = "http://localhost:18789";
+              };
               accounts.gmail = {
                 provider = "gmail";
                 email = "you@gmail.com";
@@ -224,11 +235,11 @@ sudo journalctl -u cairn-mail-sync.service -f
 
 cairn-mail includes an MCP (Model Context Protocol) server that allows AI assistants like Claude to automate email workflows through natural language.
 
-**Available Tools:**
+**Available Tools (14):**
 
 | Tool | Description |
 |------|-------------|
-| `list_accounts` | List configured email accounts |
+| `list_accounts` | List configured email accounts (includes hidden accounts) |
 | `search_emails` | Search with filters (account, folder, tags, text) |
 | `read_email` | Get full email content by ID |
 | `compose_email` | Create a draft email |
@@ -236,6 +247,12 @@ cairn-mail includes an MCP (Model Context Protocol) server that allows AI assist
 | `reply_to_email` | Create a reply draft for a thread |
 | `mark_read` | Mark messages as read/unread |
 | `delete_email` | Delete emails (trash or permanent) |
+| `restore_email` | Restore a trashed message back to its original folder |
+| `update_tags` | Set classification tags on a single message |
+| `bulk_update_tags` | Set tags on many messages in one call (records DFSL feedback) |
+| `delete_by_filter` | Delete every message matching a tag/folder/account filter |
+| `list_tags` | Enumerate the configured tag taxonomy |
+| `get_unread_count` | Unread totals, optionally scoped to one account |
 
 **Example prompts:**
 - "Send an email from my work account to joe@example.com saying I'll be late"
@@ -351,10 +368,11 @@ Built with:
 - [FastAPI](https://fastapi.tiangolo.com/) - Backend framework
 - [React](https://react.dev/) - Frontend framework
 - [Material-UI](https://mui.com/) - UI components
-- [Ollama](https://ollama.com/) - Local LLM runtime
 - [SQLAlchemy](https://www.sqlalchemy.org/) - Database ORM
 - [React Query](https://tanstack.com/query) - Data fetching
 - [Zustand](https://zustand-demo.pmnd.rs/) - State management
+
+Bring-your-own LLM via any OpenAI-compatible endpoint — works well with [Ollama](https://ollama.com/), [llama.cpp](https://github.com/ggerganov/llama.cpp), and gateway proxies like [LiteLLM](https://github.com/BerriAI/litellm).
 
 Integrates with:
 - [cairn-dav](https://github.com/kcalvelli/cairn-dav) - CalDAV/CardDAV sync with MCP server

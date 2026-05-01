@@ -7,10 +7,10 @@ Get cairn-mail running in about 15 minutes.
 Before you begin, ensure you have:
 
 1. **NixOS with flakes** - This app runs as a NixOS system service
-2. **Ollama** running with a model pulled:
-   ```bash
-   ollama pull llama3.2
-   ```
+2. **An OpenAI-compatible LLM endpoint** running somewhere reachable. cairn-mail talks to any `/v1/chat/completions` provider:
+   - **Local:** [Ollama](https://ollama.com) (`ollama pull llama3.2` then point `ai.endpoint` at `http://localhost:11434`), [llama.cpp](https://github.com/ggerganov/llama.cpp), [vLLM](https://github.com/vllm-project/vllm)
+   - **Gateway/proxy:** [LiteLLM](https://github.com/BerriAI/litellm), [openai-gateway](https://github.com/kcalvelli/openai-gateway) (default expects this on port `18789`)
+   - **Hosted:** any OpenAI-compatible API
 3. **A Nix flake-based configuration** (required)
 
 ## Architecture Overview
@@ -102,11 +102,15 @@ In your home-manager configuration, set up accounts and AI settings:
   programs.cairn-mail = {
     enable = true;
 
-    # AI settings
+    # AI settings — any OpenAI-compatible /v1/chat/completions endpoint works.
+    # Defaults shown below; swap in your local Ollama / llama.cpp / hosted endpoint.
     ai = {
       enable = true;
-      model = "llama3.2";
-      endpoint = "http://localhost:11434";
+      model = "claude-sonnet-4-20250514";
+      endpoint = "http://localhost:18789";
+      # For local Ollama instead:
+      #   model = "llama3.2";
+      #   endpoint = "http://localhost:11434";
     };
 
     # Email accounts (see Step 4 for setup)
@@ -289,11 +293,20 @@ systemctl status cairn-mail-web.service
 
 ### AI classification not working
 
-Ensure Ollama is running:
+Confirm your configured endpoint is reachable and serves an OpenAI-compatible API:
+
 ```bash
-systemctl status ollama  # or however you run Ollama
-ollama list  # Should show llama3.2 or your configured model
+# Replace with your configured ai.endpoint
+curl -s http://localhost:18789/v1/models | head
+
+# If using local Ollama, confirm the model is pulled:
+ollama list
+
+# Tail the sync service logs — classifier errors surface here
+sudo journalctl -u cairn-mail-sync.service -n 50
 ```
+
+Empty responses or 404s usually mean the endpoint isn't OpenAI-compatible. Connection refused means nothing's listening on the port you configured in `ai.endpoint`.
 
 ### Messages not syncing
 
@@ -385,8 +398,8 @@ Here's a complete multi-account setup:
 
               ai = {
                 enable = true;
-                model = "llama3.2";
-                endpoint = "http://localhost:11434";
+                model = "claude-sonnet-4-20250514";       # Default
+                endpoint = "http://localhost:18789";      # Default (openai-gateway)
                 temperature = 0.3;
                 useDefaultTags = true;
 
