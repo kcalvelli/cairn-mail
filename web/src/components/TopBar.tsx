@@ -128,7 +128,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <Box
               component="img"
               src="/logo.png"
-              alt="axiOS Mail"
+              alt="Cairn Mail"
               sx={{
                 height: { xs: 32, sm: 36 },
                 width: { xs: 32, sm: 36 },
@@ -144,7 +144,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               component="span"
               sx={{ display: { xs: 'none', sm: 'block' } }}
             >
-              axiOS Mail
+              Cairn Mail
             </Typography>
           </Box>
         )}

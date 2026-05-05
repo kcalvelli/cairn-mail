@@ -21,7 +21,7 @@ interface ThemeContextValue {
 }
 
 // Storage key for persisting theme preference
-const STORAGE_KEY = 'axios-theme';
+const STORAGE_KEY = 'cairn-theme';
 
 // Create context
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);

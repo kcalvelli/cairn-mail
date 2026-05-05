@@ -398,7 +398,7 @@ function SyncSettingsPanel() {
             value="5 minutes"
             fullWidth
             disabled
-            helperText="Configured in Nix: programs.axios-ai-mail.sync.frequency"
+            helperText="Configured in Nix: programs.cairn-mail.sync.frequency"
           />
         </Box>
 
@@ -446,7 +446,7 @@ function SyncSettingsPanel() {
             placeholder="https://example.com/webhook"
             fullWidth
             disabled
-            helperText="Configured in Nix: programs.axios-ai-mail.webhook.url"
+            helperText="Configured in Nix: programs.cairn-mail.webhook.url"
           />
         </Box>
       </Stack>

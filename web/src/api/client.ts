@@ -1,5 +1,5 @@
 /**
- * API client for axios-ai-mail backend
+ * API client for cairn-mail backend
  */
 
 import axios from 'axios';

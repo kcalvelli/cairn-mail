@@ -29,8 +29,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'icon-192.png', 'icon-512.png', 'icon-monochrome.svg'],
       manifest: {
-        name: 'axiOS Mail',
-        short_name: 'Mail',
+        name: 'Cairn Mail',
+        short_name: 'Cairn',
         description: 'AI-powered email client with intelligent classification',
         theme_color: '#1976d2',
         background_color: '#000000',

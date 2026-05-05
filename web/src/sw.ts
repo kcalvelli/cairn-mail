@@ -42,7 +42,7 @@ self.addEventListener('push', (event) => {
     payload = event.data.json() as PushPayload
   } catch {
     // Fallback for plain text push
-    payload = { title: 'axiOS Mail', body: event.data.text() }
+    payload = { title: 'Cairn Mail', body: event.data.text() }
   }
 
   const options: NotificationOptions = {
