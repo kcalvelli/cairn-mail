@@ -429,15 +429,27 @@ class Database:
                 return True
             return False
 
-    def get_message_ids_by_imap_folder(self, account_id: str, imap_folder: str) -> set:
-        """Get all message IDs stored for a given account and IMAP folder."""
+    def get_message_ids_by_imap_folder(
+        self,
+        account_id: str,
+        imap_folder: str,
+        since: Optional[datetime] = None,
+    ) -> set:
+        """Get message IDs stored for a given account and IMAP folder.
+
+        If `since` is provided, only IDs with `date >= since` are returned.
+        Used by the sync purge step to bound reconciliation to the window
+        the incremental fetch actually covers — otherwise the historical
+        archive gets swept up as "stale".
+        """
         with self.session() as session:
-            result = session.execute(
-                select(Message.id).where(
-                    Message.account_id == account_id,
-                    Message.imap_folder == imap_folder,
-                )
-            ).scalars().all()
+            query = select(Message.id).where(
+                Message.account_id == account_id,
+                Message.imap_folder == imap_folder,
+            )
+            if since is not None:
+                query = query.where(Message.date >= since)
+            result = session.execute(query).scalars().all()
             return set(result)
 
     def query_messages(

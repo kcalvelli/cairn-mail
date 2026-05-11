@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Set
 
 from .action_agent import ActionAgent
@@ -206,6 +206,30 @@ class SyncEngine:
                     errors.append(error_msg)
 
             # 5. Purge stale messages (provider is authoritative)
+            # Bound the purge to the window the incremental fetch actually
+            # covers. IMAP SINCE is day-granular and server clocks drift, so
+            # back off by a day before flooring to the start of the SINCE day.
+            # Stored messages older than that cutoff are out of scope — we
+            # never asked the server about them this round, so absence from
+            # the fetch tells us nothing.
+            if last_sync is not None:
+                # last_sync is stored UTC but SQLite returns it naive;
+                # Message.date is naive local. Reattach UTC, convert to
+                # local, then floor and back off a day.
+                last_sync_utc = (
+                    last_sync.replace(tzinfo=timezone.utc)
+                    if last_sync.tzinfo is None
+                    else last_sync
+                )
+                local_cutoff = last_sync_utc.astimezone().replace(tzinfo=None)
+                purge_cutoff: Optional[datetime] = (
+                    local_cutoff.replace(hour=0, minute=0, second=0, microsecond=0)
+                    - timedelta(days=1)
+                )
+            else:
+                # No prior sync → fetch was unbounded, so reconcile everything.
+                purge_cutoff = None
+
             fetched_ids_by_folder: dict[str, Set[str]] = {}
             for message in messages:
                 if message.imap_folder:
@@ -214,7 +238,9 @@ class SyncEngine:
             for imap_folder, fetched_ids in fetched_ids_by_folder.items():
                 try:
                     stored_ids = self.db.get_message_ids_by_imap_folder(
-                        account_id=self.account_id, imap_folder=imap_folder
+                        account_id=self.account_id,
+                        imap_folder=imap_folder,
+                        since=purge_cutoff,
                     )
                     stale_ids = stored_ids - fetched_ids
                     for stale_id in stale_ids:
