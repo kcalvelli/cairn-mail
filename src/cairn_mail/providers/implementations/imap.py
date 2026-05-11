@@ -134,6 +134,44 @@ class IMAPProvider(BaseEmailProvider):
         else:
             raise ValueError(f"Invalid message ID format: {message_id}")
 
+    def _find_uid_by_rfc822_id(
+        self, folder: str, rfc822_message_id: str
+    ) -> Optional[str]:
+        """Locate the current UID of a message in `folder` by its RFC822
+        Message-ID header.
+
+        Useful after a move (which assigns a new UID in the destination
+        folder) when the locally-stored folder+UID is stale. Returns the
+        most recent matching UID, or None if no match.
+        """
+        if not rfc822_message_id:
+            return None
+        # Skip our synthetic fallback IDs (`thread-{uid}`) — those aren't
+        # real Message-IDs and won't match anything on the server.
+        if rfc822_message_id.startswith("thread-"):
+            return None
+        if not self._select_folder(folder):
+            return None
+        # RFC 3501 quoted-string escaping: `\` and `"` need backslash-escaping.
+        escaped = rfc822_message_id.replace("\\", "\\\\").replace('"', '\\"')
+        try:
+            typ, data = self.connection.uid(
+                "SEARCH", "HEADER", "Message-ID", f'"{escaped}"'
+            )
+        except Exception as e:
+            logger.warning(
+                f"SEARCH by Message-ID failed in {folder} for "
+                f"{rfc822_message_id}: {e}"
+            )
+            return None
+        if typ != "OK" or not data or not data[0]:
+            return None
+        uids = data[0].split()
+        if not uids:
+            return None
+        # Most recent (highest UID) wins if multiple copies exist.
+        return uids[-1].decode()
+
     def _ensure_folder_mapping(self) -> Dict[str, str]:
         """
         Ensure folder mapping is cached and return it.
@@ -592,13 +630,23 @@ class IMAPProvider(BaseEmailProvider):
             logger.error(f"Failed to mark message {uid} in {folder} as unread: {e}")
             raise
 
-    def delete_message(self, message_id: str, permanent: bool = False) -> None:
+    def delete_message(
+        self,
+        message_id: str,
+        permanent: bool = False,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """
         Delete a message by moving to Trash or permanently deleting.
 
         Args:
             message_id: Message ID (format: account_id:folder:uid)
             permanent: If True, permanently delete. If False, move to Trash folder.
+            rfc822_message_id: RFC822 Message-ID header. When `permanent=True`,
+                this is used to relocate the message if the UID encoded in
+                `message_id` is stale (e.g. the message was previously
+                moved to Trash, getting a new UID there).
         """
         if not self.connection:
             raise RuntimeError("Not authenticated")
@@ -607,21 +655,63 @@ class IMAPProvider(BaseEmailProvider):
         folder, uid = self._parse_message_id(message_id)
 
         try:
-            # Select the correct folder first
-            if not self._select_folder(folder):
-                raise RuntimeError(f"Failed to select folder {folder}")
-
             if permanent:
+                # The UID in message_id can be stale after a move (e.g. a
+                # message previously trashed via move_to_trash now lives
+                # in INBOX.Trash under a different UID). When we have a
+                # stable RFC822 Message-ID, locate the current copy via
+                # SEARCH HEADER rather than trusting the encoded UID.
+                target_folder = folder
+                target_uid = uid
+                if rfc822_message_id:
+                    folder_mapping = self._ensure_folder_mapping()
+                    trash_folder = folder_mapping.get("trash")
+                    # Try the encoded folder first (cheap path: ID is fresh),
+                    # then fall through to Trash where deleted-but-not-purged
+                    # messages typically live.
+                    search_order = [folder]
+                    if trash_folder and trash_folder != folder:
+                        search_order.append(trash_folder)
+                    located = None
+                    for candidate in search_order:
+                        found_uid = self._find_uid_by_rfc822_id(
+                            candidate, rfc822_message_id
+                        )
+                        if found_uid:
+                            located = (candidate, found_uid)
+                            break
+                    if located is None:
+                        logger.warning(
+                            f"Permanent delete: message {message_id} "
+                            f"(Message-ID {rfc822_message_id}) not found in "
+                            f"{search_order} — already gone, treating as success"
+                        )
+                        return
+                    target_folder, target_uid = located
+
+                if not self._select_folder(target_folder):
+                    raise RuntimeError(f"Failed to select folder {target_folder}")
+
                 # Permanent delete: mark as deleted and expunge
-                typ, data = self.connection.uid("STORE", uid, "+FLAGS", "\\Deleted")
+                typ, data = self.connection.uid(
+                    "STORE", target_uid, "+FLAGS", "\\Deleted"
+                )
                 if typ != "OK":
                     raise RuntimeError(f"IMAP UID STORE failed: {data}")
 
                 # Expunge to permanently remove deleted messages
                 self.connection.expunge()
-                logger.info(f"Permanently deleted message UID {uid} from {folder}")
+                logger.info(
+                    f"Permanently deleted message UID {target_uid} from {target_folder}"
+                )
 
             else:
+                # Soft delete: copy to Trash, mark original deleted, expunge.
+                # The encoded UID is still valid here — this is the operation
+                # that *creates* the staleness for any later permanent delete.
+                if not self._select_folder(folder):
+                    raise RuntimeError(f"Failed to select folder {folder}")
+
                 # Move to Trash folder using discovered folder mapping
                 folder_mapping = self._ensure_folder_mapping()
                 trash_folder = folder_mapping.get("trash")
@@ -629,7 +719,11 @@ class IMAPProvider(BaseEmailProvider):
                 if not trash_folder:
                     # If no trash folder found, fall back to permanent delete
                     logger.warning("No Trash folder found, performing permanent delete")
-                    self.delete_message(message_id, permanent=True)
+                    self.delete_message(
+                        message_id,
+                        permanent=True,
+                        rfc822_message_id=rfc822_message_id,
+                    )
                     return
 
                 # Copy message to Trash folder using UID
@@ -650,34 +744,41 @@ class IMAPProvider(BaseEmailProvider):
             logger.error(f"Failed to delete message {uid} from {folder}: {e}")
             raise
 
-    def move_to_trash(self, message_id: str) -> None:
+    def move_to_trash(
+        self,
+        message_id: str,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Move a message to the trash folder.
 
-        This is a convenience wrapper around delete_message(permanent=False).
-
-        Args:
-            message_id: Message ID (format: account_id:folder:uid)
-
-        Raises:
-            RuntimeError: If the operation fails
+        Convenience wrapper around delete_message(permanent=False).
         """
-        self.delete_message(message_id, permanent=False)
+        self.delete_message(
+            message_id,
+            permanent=False,
+            rfc822_message_id=rfc822_message_id,
+        )
 
-    def restore_from_trash(self, message_id: str) -> None:
+    def restore_from_trash(
+        self,
+        message_id: str,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Restore a message from Trash to its original folder.
 
         Args:
             message_id: Message ID (format: account_id:folder:uid)
-                       Should be in Trash folder
-
-        Raises:
-            RuntimeError: If the operation fails or folders don't exist
+            rfc822_message_id: RFC822 Message-ID header. Used to relocate
+                the message in Trash when the UID encoded in `message_id`
+                is stale (e.g. it referenced the pre-trash INBOX UID).
         """
         if not self.connection:
             raise RuntimeError("Not authenticated")
 
-        # Parse message ID to extract folder and UID
-        folder, uid = self._parse_message_id(message_id)
+        # Parse message ID to extract original folder + UID
+        _orig_encoded_folder, uid = self._parse_message_id(message_id)
 
         # Get folder mapping
         folder_mapping = self._ensure_folder_mapping()
@@ -686,32 +787,47 @@ class IMAPProvider(BaseEmailProvider):
         if not trash_folder:
             raise RuntimeError("No Trash folder found on server")
 
-        # For restore, we need to know the original folder
-        # This should be stored in the database - default to INBOX for now
         # TODO: Query database for Message.original_folder
         original_folder = folder_mapping.get("inbox", "INBOX")
 
+        # Locate the current Trash UID. The encoded UID is almost always
+        # stale here because `move_to_trash` reassigns UID on copy.
+        target_uid = uid
+        if rfc822_message_id:
+            found_uid = self._find_uid_by_rfc822_id(trash_folder, rfc822_message_id)
+            if found_uid:
+                target_uid = found_uid
+            else:
+                logger.warning(
+                    f"Restore: message {message_id} (Message-ID "
+                    f"{rfc822_message_id}) not found in {trash_folder}; "
+                    f"falling back to encoded UID {uid}"
+                )
+
         try:
-            # Select Trash folder
             if not self._select_folder(trash_folder):
                 raise RuntimeError(f"Failed to select folder {trash_folder}")
 
-            # Copy message to original folder using UID
-            typ, data = self.connection.uid("COPY", uid, original_folder)
+            typ, data = self.connection.uid("COPY", target_uid, original_folder)
             if typ != "OK":
-                raise RuntimeError(f"IMAP UID COPY to {original_folder} failed: {data}")
+                raise RuntimeError(
+                    f"IMAP UID COPY to {original_folder} failed: {data}"
+                )
 
-            # Mark message in Trash as deleted
-            typ, data = self.connection.uid("STORE", uid, "+FLAGS", "\\Deleted")
+            typ, data = self.connection.uid(
+                "STORE", target_uid, "+FLAGS", "\\Deleted"
+            )
             if typ != "OK":
                 raise RuntimeError(f"IMAP UID STORE failed: {data}")
 
-            # Expunge to remove from Trash
             self.connection.expunge()
-            logger.info(f"Restored message UID {uid} from {trash_folder} to {original_folder}")
+            logger.info(
+                f"Restored message UID {target_uid} from {trash_folder} "
+                f"to {original_folder}"
+            )
 
         except Exception as e:
-            logger.error(f"Failed to restore message {uid} from trash: {e}")
+            logger.error(f"Failed to restore message {target_uid} from trash: {e}")
             raise
 
     def update_labels(

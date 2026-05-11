@@ -399,13 +399,20 @@ async def bulk_permanent_delete(request: Request, body: BulkDeleteRequest):
                     errors.append({"message_id": message_id, "error": "Not found"})
                     continue
 
-                # Phase 2: Sync to provider first (permanent delete)
+                # Phase 2: Sync to provider first (permanent delete).
+                # Pass the RFC822 Message-ID so IMAP can locate the
+                # message even if the encoded UID is stale (e.g. message
+                # was previously moved to Trash with a new UID).
                 try:
                     account = db.get_account(message.account_id)
                     if account:
                         provider = ProviderFactory.create_from_account(account)
                         provider.authenticate()
-                        provider.delete_message(message_id, permanent=True)
+                        provider.delete_message(
+                            message_id,
+                            permanent=True,
+                            rfc822_message_id=message.thread_id,
+                        )
                         provider_synced_count += 1
                 except Exception as e:
                     provider_failed_count += 1

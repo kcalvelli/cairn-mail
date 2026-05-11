@@ -424,6 +424,15 @@ class SyncEngine:
 
         return labels_to_add, labels_to_remove
 
+    def process_pending_only(self, max_ops: int = 50) -> tuple[int, int]:
+        """Run only the pending-operations queue.
+
+        Used by the CLI when an account is in empty-sync backoff: we still
+        need user actions (mark read, trash, delete) to propagate to the
+        provider even when we're not fetching new mail.
+        """
+        return self._process_pending_operations(max_ops=max_ops)
+
     def _process_pending_operations(self, max_ops: int = 50) -> tuple[int, int]:
         """Process pending operations queue.
 
@@ -454,6 +463,18 @@ class SyncEngine:
 
         for op in pending:
             try:
+                # For delete/restore the encoded folder+UID in op.message_id
+                # can be stale (a prior move-to-trash reassigns the UID in the
+                # destination folder). Hand the provider the stable RFC822
+                # Message-ID — stored in Message.thread_id — so it can locate
+                # the current copy via SEARCH HEADER instead of trusting the
+                # encoded UID.
+                if op.operation in ("delete", "restore"):
+                    local_msg = self.db.get_message(op.message_id)
+                    rfc822_id = local_msg.thread_id if local_msg else None
+                else:
+                    rfc822_id = None
+
                 # Execute operation against provider
                 if op.operation == "mark_read":
                     self.provider.mark_as_read(op.message_id)
@@ -462,10 +483,16 @@ class SyncEngine:
                 elif op.operation == "trash":
                     self.provider.move_to_trash(op.message_id)
                 elif op.operation == "restore":
-                    self.provider.restore_from_trash(op.message_id)
+                    self.provider.restore_from_trash(
+                        op.message_id, rfc822_message_id=rfc822_id
+                    )
                 elif op.operation == "delete":
                     # Permanent delete: remove from provider, then from local DB
-                    self.provider.delete_message(op.message_id, permanent=True)
+                    self.provider.delete_message(
+                        op.message_id,
+                        permanent=True,
+                        rfc822_message_id=rfc822_id,
+                    )
                     # Delete from local DB - this CASCADE deletes the pending operation too
                     self.db.delete_message(op.message_id)
                     processed += 1

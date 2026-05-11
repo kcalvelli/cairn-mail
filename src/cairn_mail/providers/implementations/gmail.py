@@ -419,11 +419,17 @@ class GmailProvider(BaseEmailProvider):
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
-    def restore_from_trash(self, message_id: str) -> None:
+    def restore_from_trash(
+        self,
+        message_id: str,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Restore a Gmail message from trash to inbox.
 
         Args:
             message_id: Gmail message ID
+            rfc822_message_id: Ignored (Gmail IDs are stable across moves)
 
         Raises:
             RuntimeError: If the operation fails
@@ -451,12 +457,19 @@ class GmailProvider(BaseEmailProvider):
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
-    def delete_message(self, message_id: str, permanent: bool = False) -> None:
+    def delete_message(
+        self,
+        message_id: str,
+        permanent: bool = False,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Delete a Gmail message.
 
         Args:
             message_id: Gmail message ID
             permanent: If True, permanently delete. If False, move to trash.
+            rfc822_message_id: Ignored (Gmail IDs are stable across moves)
 
         Raises:
             RuntimeError: If the operation fails

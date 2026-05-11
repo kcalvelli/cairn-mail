@@ -150,9 +150,17 @@ def sync_run(
     # Sync each account
     results = []
     for db_account in accounts:
-        # Adaptive backoff: skip accounts with no recent activity
+        # Adaptive backoff: skip the FETCH for accounts with no recent
+        # activity, but always drain the pending-operations queue —
+        # otherwise user actions (mark read, trash, empty-trash) sit
+        # stuck waiting for new mail to arrive on low-volume accounts.
         consecutive_empty = db.get_consecutive_empty_syncs(db_account.id)
-        if _should_skip_sync(consecutive_empty, _sync_cycle):
+        backoff_fetch = _should_skip_sync(consecutive_empty, _sync_cycle)
+        pending_ops = db.get_pending_operations(
+            account_id=db_account.id, limit=1, status="pending"
+        )
+
+        if backoff_fetch and not pending_ops:
             logger.info(
                 f"Skipping {db_account.email}: {consecutive_empty} consecutive "
                 f"empty syncs (cycle {_sync_cycle})"
@@ -163,7 +171,13 @@ def sync_run(
             )
             continue
 
-        console.print(f"\n[bold]Syncing account: {db_account.email}[/bold]")
+        if backoff_fetch:
+            console.print(
+                f"\n[bold]Draining pending ops for {db_account.email}[/bold] "
+                f"[dim]({consecutive_empty} empty syncs, fetch skipped)[/dim]"
+            )
+        else:
+            console.print(f"\n[bold]Syncing account: {db_account.email}[/bold]")
 
         # Initialize provider using factory pattern
         provider = ProviderFactory.create_from_account(db_account)
@@ -192,6 +206,16 @@ def sync_run(
                 label_prefix=db_account.settings.get("label_prefix", "AI"),
                 action_agent=action_agent,
             )
+
+            # In backoff: drain pending ops only, don't fetch and don't
+            # touch the empty-sync counter (counting this as another empty
+            # sync would extend backoff indefinitely).
+            if backoff_fetch:
+                processed, failed = sync_engine.process_pending_only()
+                console.print(
+                    f"  Pending ops: {processed} processed, {failed} failed"
+                )
+                continue
 
             # Run sync
             result = sync_engine.sync(max_messages=max_messages)

@@ -123,26 +123,37 @@ class EmailProvider(Protocol):
         """
         ...
 
-    def restore_from_trash(self, message_id: str) -> None:
+    def restore_from_trash(
+        self,
+        message_id: str,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Restore a message from trash to its original folder.
-
-        The original folder is retrieved from the database. If not available,
-        the message is restored to the default inbox folder.
 
         Args:
             message_id: Provider-specific message ID
+            rfc822_message_id: RFC822 Message-ID header (optional, for
+                providers where IDs drift after moves)
 
         Raises:
             RuntimeError: If the operation fails or message not found in trash
         """
         ...
 
-    def delete_message(self, message_id: str, permanent: bool = False) -> None:
+    def delete_message(
+        self,
+        message_id: str,
+        permanent: bool = False,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Delete a message from the provider.
 
         Args:
             message_id: Provider-specific message ID
             permanent: If True, permanently delete. If False, move to trash.
+            rfc822_message_id: RFC822 Message-ID header (optional)
 
         Raises:
             RuntimeError: If the operation fails
@@ -289,14 +300,21 @@ class BaseEmailProvider(ABC):
         pass
 
     @abstractmethod
-    def restore_from_trash(self, message_id: str) -> None:
+    def restore_from_trash(
+        self,
+        message_id: str,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Restore a message from trash to its original folder.
-
-        The original folder is retrieved from the database. If not available,
-        the message is restored to the default inbox folder.
 
         Args:
             message_id: Provider-specific message ID
+            rfc822_message_id: RFC822 Message-ID header. For providers where
+                message_id encodes a position that drifts after moves (e.g.
+                IMAP folder+UID), supplying this stable header lets the
+                provider locate the message even if message_id is stale.
+                Providers with stable IDs (Gmail) may ignore it.
 
         Raises:
             RuntimeError: If the operation fails or message not found in trash
@@ -304,12 +322,20 @@ class BaseEmailProvider(ABC):
         pass
 
     @abstractmethod
-    def delete_message(self, message_id: str, permanent: bool = False) -> None:
+    def delete_message(
+        self,
+        message_id: str,
+        permanent: bool = False,
+        *,
+        rfc822_message_id: Optional[str] = None,
+    ) -> None:
         """Delete a message from the provider.
 
         Args:
             message_id: Provider-specific message ID
             permanent: If True, permanently delete. If False, move to trash.
+            rfc822_message_id: RFC822 Message-ID header. See
+                restore_from_trash for rationale.
 
         Raises:
             RuntimeError: If the operation fails
