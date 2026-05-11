@@ -230,7 +230,14 @@ class SyncEngine:
                 # No prior sync → fetch was unbounded, so reconcile everything.
                 purge_cutoff = None
 
+            # Pre-seed with every folder the provider successfully queried.
+            # Without this, a folder that returned zero messages from the
+            # incremental fetch (quiescent server-side folder) would silently
+            # skip purge — letting stale local records linger across syncs.
             fetched_ids_by_folder: dict[str, Set[str]] = {}
+            if hasattr(self.provider, "get_last_queried_imap_folders"):
+                for f in self.provider.get_last_queried_imap_folders():
+                    fetched_ids_by_folder[f] = set()
             for message in messages:
                 if message.imap_folder:
                     fetched_ids_by_folder.setdefault(message.imap_folder, set()).add(message.id)
