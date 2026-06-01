@@ -20,7 +20,7 @@
 
 ## 3. Concurrency Lock
 
-- [x] 3.1 Add a module `cairn_mail.sync_lock` providing a `with sync_lock():` context manager that acquires a non-blocking `fcntl.LOCK_EX | LOCK_NB` on `/run/cairn-mail/sync.lock`, falling back to `$XDG_RUNTIME_DIR/cairn-mail/sync.lock` for non-root invocations
+- [x] 3.1 Add a module `cairn_mail.sync_lock` providing a `with sync_lock(db_path):` context manager that acquires a non-blocking `fcntl.LOCK_EX | LOCK_NB` on `<db_dir>/sync.lock`. (Originally specced as `/run/cairn-mail/sync.lock` with an XDG fallback; verification showed that path diverges between manual and systemd invocations and never excludes them — moved the lock beside the DB so every entrant contends on one stable path. See design.md decision 4.)
 - [x] 3.2 If acquisition fails, the context manager raises a `SyncLockHeld` exception with the holder's PID if readable
 - [x] 3.3 Wrap the body of `cairn-mail sync run` in the lock; on `SyncLockHeld`, log info and `raise typer.Exit(0)` cleanly
 - [x] 3.4 Wrap the body of `cairn-mail sync deep` in the lock; on `SyncLockHeld`, log info and `raise typer.Exit(0)` cleanly
@@ -35,7 +35,7 @@
 
 - [x] 5.1 Add `services.cairn-mail.sync.deep` option block to `modules/nixos/default.nix` with `enable` (default `false` initially) and `onCalendar` (default `"Sun 03:00"`) sub-options
 - [x] 5.2 Conditionally install `cairn-mail-sync-deep.service` (oneshot, `ExecStart=… sync deep`) and `cairn-mail-sync-deep.timer` (`OnCalendar=${cfg.deep.onCalendar}`, `Persistent=true`) when enabled
-- [x] 5.3 Add `RuntimeDirectory=cairn-mail` to both the existing `cairn-mail-sync.service` and the new `cairn-mail-sync-deep.service` so the lock file's parent directory exists on a tmpfs
+- [x] 5.3 ~~Add `RuntimeDirectory=cairn-mail` to both units so the lock file's parent dir exists on tmpfs~~ — dropped during verification. The lock moved beside the DB (decision 4), so no RuntimeDirectory is needed; the data dir is already in `ReadWritePaths`. Keeping a shared `RuntimeDirectory` would also have introduced an unlink race (`RuntimeDirectoryPreserve=no` removes the dir when either oneshot exits).
 
 ## 6. Verify and Roll Out
 

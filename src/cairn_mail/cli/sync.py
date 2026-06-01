@@ -127,7 +127,7 @@ def sync_run(
     # run) holds the lock, bow out cleanly rather than racing the DB and the
     # provider connection pool.
     try:
-        with sync_lock():
+        with sync_lock(db_path):
             _sync_run_locked(account, max_messages, db_path)
     except SyncLockHeld as e:
         logger.info(f"Incremental sync skipped — {e}")
@@ -396,7 +396,7 @@ def sync_deep(
     # Share the single-writer lock with the incremental sync — only one of
     # them touches the DB and provider pool at a time.
     try:
-        with sync_lock():
+        with sync_lock(db_path):
             _sync_deep_locked(account, db_path)
     except SyncLockHeld as e:
         logger.info(f"Deep reconciliation skipped — {e}")

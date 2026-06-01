@@ -6,9 +6,15 @@ queue, and the provider connections all assume a single writer. This module
 provides a non-blocking advisory lock so the second entrant bows out cleanly
 instead of racing.
 
-The lock lives on a tmpfs (`/run/cairn-mail/` under systemd, the user's
-`$XDG_RUNTIME_DIR` otherwise). An `fcntl` advisory lock is released by the
-kernel when the holding process exits, so a crash never wedges the next run.
+The lock lives next to the database it protects (`<db_dir>/sync.lock`). That
+gives one stable path regardless of how sync was invoked — the systemd timer
+and a manual `cairn-mail sync deep` resolve to the same file, which a
+`/run/cairn-mail` RuntimeDirectory does NOT (it only exists while a unit is
+mid-run, so manual runs and systemd runs end up on different inodes and never
+exclude each other). An `fcntl` advisory lock is released by the kernel when
+the holding process exits, so a crash never wedges the next run, and a stale
+lock file on disk is harmless because the lock lives on the open fd, not on
+the file's existence.
 """
 
 import errno
@@ -17,11 +23,10 @@ import logging
 import os
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 
-_SYSTEM_LOCK_DIR = Path("/run/cairn-mail")
 _LOCK_FILENAME = "sync.lock"
 
 
@@ -38,18 +43,6 @@ class SyncLockHeld(Exception):
         super().__init__(f"sync lock {lock_path} is already held{held_by}")
 
 
-def _resolve_lock_path() -> Path:
-    """Pick the lock path: the systemd RuntimeDirectory if writable, else the
-    user's XDG runtime dir (so a non-root manual invocation still locks)."""
-    if os.access(_SYSTEM_LOCK_DIR, os.W_OK):
-        return _SYSTEM_LOCK_DIR / _LOCK_FILENAME
-
-    xdg = os.environ.get("XDG_RUNTIME_DIR")
-    base = Path(xdg) / "cairn-mail" if xdg else Path.home() / ".cache/cairn-mail"
-    base.mkdir(parents=True, exist_ok=True)
-    return base / _LOCK_FILENAME
-
-
 def _read_holder_pid(path: Path) -> Optional[int]:
     try:
         return int(path.read_text().strip())
@@ -58,14 +51,20 @@ def _read_holder_pid(path: Path) -> Optional[int]:
 
 
 @contextmanager
-def sync_lock():
-    """Acquire the advisory sync lock for the duration of the context.
+def sync_lock(db_path: Union[str, Path]):
+    """Acquire the advisory sync lock for the database at `db_path`.
+
+    The lock file sits beside the DB so every entrant — systemd timer or
+    manual CLI — contends on the same path. A custom `--db` gets its own
+    lock, which is correct: a different DB is not a conflicting writer.
 
     Raises:
         SyncLockHeld: if another process already holds the lock. The caller
             is expected to log and exit cleanly rather than wait.
     """
-    lock_path = _resolve_lock_path()
+    lock_path = Path(db_path).parent / _LOCK_FILENAME
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+
     # Open without truncating so a contended attempt can still read the
     # holder's PID.
     fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o644)

@@ -157,9 +157,6 @@ in {
         Group = cfg.group;
         ExecStart = "${cfg.package}/bin/cairn-mail sync run";
 
-        # tmpfs dir for the advisory sync lock (shared with the deep sync).
-        RuntimeDirectory = "cairn-mail";
-
         # Read config from user's home
         Environment = [
           "PYTHONUNBUFFERED=1"
@@ -188,9 +185,6 @@ in {
         User = cfg.user;
         Group = cfg.group;
         ExecStart = "${cfg.package}/bin/cairn-mail sync deep";
-
-        # tmpfs dir for the advisory sync lock (shared with the 5-min sync).
-        RuntimeDirectory = "cairn-mail";
 
         Environment = [
           "PYTHONUNBUFFERED=1"

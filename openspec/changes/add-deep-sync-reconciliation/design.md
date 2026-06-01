@@ -64,11 +64,14 @@ The threshold exists for the genuinely-empty-folder case: a user actually deleti
 
 ### 4. Advisory lock against the 5-minute timer
 
-**Decision:** Use a file-based advisory lock at `/run/cairn-mail/sync.lock` (or whatever directory the systemd unit `RuntimeDirectory` provides). Both the 5-minute `sync run` and `sync deep` acquire it non-blocking on entry; if it is held, the entrant logs and exits cleanly.
+**Decision:** Use a file-based advisory `fcntl` lock at `<db_dir>/sync.lock` — i.e. beside the database the lock protects. Both the 5-minute `sync run` and `sync deep` acquire it non-blocking on entry; if it is held, the entrant logs and exits cleanly.
 
-**Rationale:** Two concurrent sync processes hitting the same DB and the same IMAP provider connection pool is asking for trouble — provider connections, transactional sync state, and the empty-sync counter all assume single-writer. A non-blocking file lock is the simplest correct mechanism, survives crash recovery (file ages out with the runtime directory), and does not require DB schema changes. systemd-managed `RuntimeDirectory=cairn-mail` gives a tmpfs path that is created on service start and cleaned on stop.
+**Rationale:** Two concurrent sync processes hitting the same DB and the same IMAP provider connection pool is asking for trouble — provider connections, transactional sync state, and the empty-sync counter all assume single-writer. A non-blocking file lock is the simplest correct mechanism and does not require DB schema changes. The `fcntl` lock is released by the kernel when the holder exits, so a crash never wedges the next run, and a stale lock file on disk is harmless because the lock lives on the open fd, not on file existence.
+
+**Lock path — original `/run/cairn-mail` plan was wrong (corrected during verification).** The first cut used `/run/cairn-mail/sync.lock` backed by a systemd `RuntimeDirectory=cairn-mail`, with an XDG fallback for non-root. Live testing showed this does NOT provide mutual exclusion: a manual `cairn-mail sync deep` runs without the systemd RuntimeDirectory, so `/run/cairn-mail` doesn't exist and it falls back to `$XDG_RUNTIME_DIR` — a *different* inode from the one the systemd timer uses. The two ran fully concurrent, both writing the DB. Worse, `RuntimeDirectoryPreserve=no` (the default) means each oneshot removes `/run/cairn-mail` on exit, so even in the all-systemd case the incremental finishing mid-deep can unlink the lock dir out from under the deep run. Putting the lock beside the DB gives one stable path for every invocation mode, with no RuntimeDirectory lifecycle to fight. The data dir is already in the units' `ReadWritePaths`, so `ProtectSystem=strict` is satisfied without extra directives.
 
 **Alternatives considered:**
+- `/run/cairn-mail` + `RuntimeDirectory` — rejected after verification (see above).
 - DB row lock — works but introduces a "what if the row is stale from a crashed sync" recovery problem.
 - systemd unit dependency / `Conflicts=` directive — only partial protection because nothing stops a manual `cairn-mail sync deep` invocation from racing the timer.
 
