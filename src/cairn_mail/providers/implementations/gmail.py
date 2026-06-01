@@ -4,7 +4,7 @@ import email.utils
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -181,6 +181,108 @@ class GmailProvider(BaseEmailProvider):
         except HttpError as e:
             logger.error(f"Gmail API error while fetching messages: {e}")
             raise
+
+    # Logical folder -> Gmail search query (no date filter). Deep
+    # reconciliation walks these; Gmail's "folders" are really labels.
+    _FOLDER_QUERIES = {
+        "inbox": "in:inbox",
+        "sent": "in:sent",
+        "trash": "in:trash",
+    }
+
+    def list_folders(self) -> List[str]:
+        """Logical folders deep reconciliation should walk.
+
+        Gmail has no IMAP-style folder tree; we reconcile the three logical
+        folders the rest of the app stores against the message's `folder`
+        column.
+        """
+        return list(self._FOLDER_QUERIES.keys())
+
+    def list_all_uids(self, folder: str) -> Set[str]:
+        """Every Gmail message id in a logical folder, no date window.
+
+        Walks all result pages so the diff sees the full server-side set.
+        """
+        if not self.service:
+            self.authenticate()
+
+        query = self._FOLDER_QUERIES.get(folder)
+        if query is None:
+            logger.warning(f"Deep sync: unknown Gmail folder '{folder}', skipping")
+            return set()
+
+        ids: Set[str] = set()
+        page_token: Optional[str] = None
+        while True:
+            resp = (
+                self.service.users()
+                .messages()
+                .list(userId="me", q=query, maxResults=500, pageToken=page_token)
+                .execute()
+            )
+            ids.update(item["id"] for item in resp.get("messages", []))
+            page_token = resp.get("nextPageToken")
+            if not page_token:
+                break
+        return ids
+
+    def fetch_flags(
+        self, folder: str, uids: Iterable[str]
+    ) -> Dict[str, Set[str]]:
+        """IMAP-style flags per Gmail id.
+
+        Maps the label model onto the flag model: absence of the UNREAD
+        label becomes a synthetic `\\Seen` so the engine's read/unread
+        reconciliation stays provider-agnostic.
+        """
+        if not self.service:
+            self.authenticate()
+
+        result: Dict[str, Set[str]] = {}
+        for msg_id in uids:
+            try:
+                detail = (
+                    self.service.users()
+                    .messages()
+                    .get(userId="me", id=msg_id, format="metadata", metadataHeaders=[])
+                    .execute()
+                )
+                label_ids = detail.get("labelIds", [])
+                flags: Set[str] = set()
+                if "UNREAD" not in label_ids:
+                    flags.add("\\Seen")
+                result[msg_id] = flags
+            except HttpError as e:
+                logger.warning(f"Deep sync: failed to fetch flags for {msg_id}: {e}")
+                continue
+        return result
+
+    def fetch_envelope(
+        self, folder: str, uids: Iterable[str]
+    ) -> List[Message]:
+        """Hydrate Message objects for newly-discovered Gmail ids.
+
+        Reuses `_parse_gmail_message` — the same path as the incremental
+        fetch — so envelope/body parsing stays in one place.
+        """
+        if not self.service:
+            self.authenticate()
+
+        messages: List[Message] = []
+        for msg_id in uids:
+            try:
+                detail = (
+                    self.service.users()
+                    .messages()
+                    .get(userId="me", id=msg_id, format="full")
+                    .execute()
+                )
+                messages.append(self._parse_gmail_message(detail))
+            except HttpError as e:
+                logger.warning(f"Deep sync: failed to fetch envelope for {msg_id}: {e}")
+                continue
+        return messages
 
     def _parse_gmail_message(self, msg_detail: Dict) -> Message:
         """Parse Gmail API message into normalized Message object.

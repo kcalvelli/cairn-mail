@@ -79,6 +79,28 @@ in {
         description = "Delay before first sync after boot (systemd timer format).";
         example = "5min";
       };
+
+      # Weekly deep reconciliation: a full per-folder UID walk that closes the
+      # drift the windowed 5-minute sync can't see. Off by default until it's
+      # proven out on a live deployment.
+      deep = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = ''
+            Enable the weekly deep reconciliation timer. Runs a full
+            per-folder UID diff against the provider, bypassing the
+            incremental SINCE window. Does not refetch bodies or classify.
+          '';
+        };
+
+        onCalendar = mkOption {
+          type = types.str;
+          default = "Sun 03:00";
+          description = "When to run deep reconciliation (systemd OnCalendar format).";
+          example = "daily";
+        };
+      };
     };
   };
 
@@ -135,6 +157,9 @@ in {
         Group = cfg.group;
         ExecStart = "${cfg.package}/bin/cairn-mail sync run";
 
+        # tmpfs dir for the advisory sync lock (shared with the deep sync).
+        RuntimeDirectory = "cairn-mail";
+
         # Read config from user's home
         Environment = [
           "PYTHONUNBUFFERED=1"
@@ -149,6 +174,48 @@ in {
           "/home/${cfg.user}/.local/share/cairn-mail"
         ];
         PrivateTmp = true;
+      };
+    };
+
+    # Deep reconciliation service: full per-folder UID walk, weekly.
+    systemd.services.cairn-mail-sync-deep = mkIf (cfg.sync.enable && cfg.sync.deep.enable) {
+      description = "cairn-mail deep reconciliation service";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        User = cfg.user;
+        Group = cfg.group;
+        ExecStart = "${cfg.package}/bin/cairn-mail sync deep";
+
+        # tmpfs dir for the advisory sync lock (shared with the 5-min sync).
+        RuntimeDirectory = "cairn-mail";
+
+        Environment = [
+          "PYTHONUNBUFFERED=1"
+          "HOME=/home/${cfg.user}"
+        ];
+
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ProtectHome = "read-only";
+        ReadWritePaths = [
+          "/home/${cfg.user}/.local/share/cairn-mail"
+        ];
+        PrivateTmp = true;
+      };
+    };
+
+    # Deep reconciliation timer: weekly by default (Sun 03:00).
+    systemd.timers.cairn-mail-sync-deep = mkIf (cfg.sync.enable && cfg.sync.deep.enable) {
+      description = "cairn-mail deep reconciliation timer";
+      wantedBy = [ "timers.target" ];
+
+      timerConfig = {
+        OnCalendar = cfg.sync.deep.onCalendar;
+        Unit = "cairn-mail-sync-deep.service";
+        Persistent = true;  # Catch up if the box was off at the scheduled time
       };
     };
 

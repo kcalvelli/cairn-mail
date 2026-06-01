@@ -452,6 +452,25 @@ class Database:
             result = session.execute(query).scalars().all()
             return set(result)
 
+    def get_message_ids_by_folder(
+        self,
+        account_id: str,
+        folder: str,
+    ) -> set:
+        """Get message IDs stored for a given account and logical folder.
+
+        Used by deep reconciliation for providers (Gmail) that key local
+        rows by the logical `folder` column rather than an IMAP folder name.
+        No date window — deep reconciliation reconciles the full set.
+        """
+        with self.session() as session:
+            query = select(Message.id).where(
+                Message.account_id == account_id,
+                Message.folder == folder,
+            )
+            result = session.execute(query).scalars().all()
+            return set(result)
+
     def query_messages(
         self,
         account_id: Optional[str] = None,

@@ -13,6 +13,12 @@ from .providers.base import BaseEmailProvider, Message
 
 logger = logging.getLogger(__name__)
 
+# Below this many local rows, a folder reporting zero server UIDs is treated
+# as a genuine emptying and purged normally. Above it, a 0-UID server result
+# is almost certainly an enumeration failure (see the historical-archive
+# purge incident), so deep reconciliation refuses to purge that folder.
+EMPTY_FOLDER_PURGE_THRESHOLD = 5
+
 
 @dataclass
 class NewMessageInfo:
@@ -71,6 +77,37 @@ class SyncResult:
             f"purged={self.messages_purged}, "
             f"pending_ops={self.pending_ops_processed}/{self.pending_ops_processed + self.pending_ops_failed}, "
             f"actions={self.actions_succeeded}/{self.actions_processed}, "
+            f"errors={len(self.errors)}, "
+            f"duration={self.duration_seconds:.2f}s)"
+        )
+
+
+@dataclass
+class DeepReconcileResult:
+    """Result of a deep reconciliation pass (SyncResult-shaped).
+
+    Deep reconciliation is a structural diff, not a fetch, so it reports a
+    different set of counters than `SyncResult` — no classification, no
+    pending-ops, no notifications.
+    """
+
+    account_id: str
+    reconciled_folders: int
+    messages_added: int
+    messages_purged: int
+    flags_updated: int
+    safety_rail_aborts: int
+    errors: List[str]
+    duration_seconds: float
+
+    def __str__(self) -> str:
+        return (
+            f"DeepReconcileResult(account={self.account_id}, "
+            f"folders={self.reconciled_folders}, "
+            f"added={self.messages_added}, "
+            f"purged={self.messages_purged}, "
+            f"flags_updated={self.flags_updated}, "
+            f"safety_rail_aborts={self.safety_rail_aborts}, "
             f"errors={len(self.errors)}, "
             f"duration={self.duration_seconds:.2f}s)"
         )
@@ -412,6 +449,167 @@ class SyncEngine:
                 actions_succeeded=actions_succeeded,
                 actions_failed=actions_failed,
             )
+
+    def deep_reconcile(self) -> DeepReconcileResult:
+        """Reconcile the full per-folder UID set against the local DB.
+
+        Unlike `sync()`, this bypasses the SINCE window and walks every UID in
+        every folder. It reconciles existence (add missing, purge deleted) and
+        read/unread flag drift. It deliberately does NOT: refetch bodies for
+        UIDs already stored, run the AI classifier, fire push notifications,
+        process the pending-operations queue, touch `last_sync`, or touch the
+        empty-sync backoff counter. See design.md for the rationale.
+
+        Folders are walked sequentially; an exception in one folder is logged
+        and reconciliation continues with the next.
+        """
+        start_time = datetime.now(timezone.utc)
+        errors: List[str] = []
+        reconciled_folders = 0
+        messages_added = 0
+        messages_purged = 0
+        flags_updated = 0
+        safety_rail_aborts = 0
+
+        logger.info(f"Starting deep reconciliation for account {self.account_id}")
+
+        try:
+            # Fresh listing (no cache) so folders created since the last
+            # incremental sync are included.
+            folders = self.provider.list_folders()
+        except Exception as e:
+            error_msg = f"Deep reconcile failed to list folders for {self.account_id}: {e}"
+            logger.error(error_msg)
+            errors.append(error_msg)
+            folders = []
+
+        for folder in folders:
+            try:
+                server_uids = self.provider.list_all_uids(folder)
+                # Map each server UID onto the local DB key it would occupy.
+                server_by_dbid = {
+                    self.provider.message_db_id(folder, uid): uid
+                    for uid in server_uids
+                }
+                server_dbids = set(server_by_dbid)
+
+                if self.provider.uses_imap_folders:
+                    local_ids = self.db.get_message_ids_by_imap_folder(
+                        account_id=self.account_id, imap_folder=folder, since=None
+                    )
+                else:
+                    local_ids = self.db.get_message_ids_by_folder(
+                        account_id=self.account_id, folder=folder
+                    )
+
+                # Empty-folder safety rail: a populated local folder going to
+                # zero server UIDs in one pass is almost always an enumeration
+                # failure, not a real deletion. Abort loudly, skip this folder.
+                if len(server_uids) == 0 and len(local_ids) > EMPTY_FOLDER_PURGE_THRESHOLD:
+                    logger.error(
+                        f"Deep reconcile safety rail: {self.account_id}/{folder} "
+                        f"returned 0 server UIDs but has {len(local_ids)} local "
+                        f"rows — skipping purge and flag reconciliation for this "
+                        f"folder (suspected enumeration failure)"
+                    )
+                    safety_rail_aborts += 1
+                    continue
+
+                to_add_dbids = server_dbids - local_ids
+                to_purge = local_ids - server_dbids
+                to_reconcile = server_dbids & local_ids
+
+                # 1. Add server UIDs we've never seen locally. Hydrate the
+                # envelope but do NOT classify and do NOT track as "new" —
+                # these are pre-existing messages surfacing through drift, not
+                # fresh arrivals worth notifying about.
+                if to_add_dbids:
+                    add_uids = [server_by_dbid[d] for d in to_add_dbids]
+                    for message in self.provider.fetch_envelope(folder, add_uids):
+                        try:
+                            self.db.create_or_update_message(
+                                message_id=message.id,
+                                account_id=self.account_id,
+                                thread_id=message.thread_id,
+                                subject=message.subject,
+                                from_email=message.from_email,
+                                to_emails=message.to_emails,
+                                date=message.date,
+                                snippet=message.snippet,
+                                is_unread=message.is_unread,
+                                provider_labels=list(message.labels),
+                                folder=message.folder,
+                                body_text=message.body_text,
+                                body_html=message.body_html,
+                                imap_folder=message.imap_folder,
+                                has_attachments=message.has_attachments,
+                            )
+                            messages_added += 1
+                        except Exception as e:
+                            error_msg = f"Deep reconcile failed to add {message.id}: {e}"
+                            logger.error(error_msg)
+                            errors.append(error_msg)
+
+                # 2. Purge local rows the server no longer reports.
+                for dbid in to_purge:
+                    try:
+                        self.db.delete_message(dbid)
+                        messages_purged += 1
+                    except Exception as e:
+                        error_msg = f"Deep reconcile failed to purge {dbid}: {e}"
+                        logger.error(error_msg)
+                        errors.append(error_msg)
+                if to_purge:
+                    logger.info(
+                        f"Deep reconcile purged {len(to_purge)} messages from "
+                        f"{folder} for {self.account_id}"
+                    )
+
+                # 3. Reconcile read/unread drift for UIDs present on both sides.
+                # NOTE: keyword/label drift (e.g. IMAP $-keywords, Gmail
+                # cross-folder labels) is intentionally NOT reconciled here —
+                # it's a deferred non-goal (see design.md). We only touch the
+                # \Seen <-> is_unread axis.
+                if to_reconcile:
+                    recon_uids = [server_by_dbid[d] for d in to_reconcile]
+                    flags_by_uid = self.provider.fetch_flags(folder, recon_uids)
+                    for dbid in to_reconcile:
+                        uid = server_by_dbid[dbid]
+                        flags = flags_by_uid.get(uid)
+                        if flags is None:
+                            continue
+                        server_unread = "\\Seen" not in flags
+                        local = self.db.get_message(dbid)
+                        if local is None:
+                            continue
+                        if local.is_unread != server_unread:
+                            self.db.update_message_read_status(dbid, server_unread)
+                            flags_updated += 1
+
+                reconciled_folders += 1
+
+            except Exception as e:
+                error_msg = (
+                    f"Deep reconcile failed for folder {folder} on "
+                    f"{self.account_id}: {e}"
+                )
+                logger.error(error_msg)
+                errors.append(error_msg)
+                continue
+
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        result = DeepReconcileResult(
+            account_id=self.account_id,
+            reconciled_folders=reconciled_folders,
+            messages_added=messages_added,
+            messages_purged=messages_purged,
+            flags_updated=flags_updated,
+            safety_rail_aborts=safety_rail_aborts,
+            errors=errors,
+            duration_seconds=duration,
+        )
+        logger.info(f"Deep reconciliation completed: {result}")
+        return result
 
     def _compute_label_changes(
         self, message: Message, classification

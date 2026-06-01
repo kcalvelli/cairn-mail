@@ -17,6 +17,7 @@ from ..db.database import Database
 from ..gateway_client import GatewayClient, GatewayError
 from ..providers.factory import ProviderFactory
 from ..sync_engine import SyncEngine
+from ..sync_lock import SyncLockHeld, sync_lock
 
 console = Console()
 sync_app = typer.Typer(help="Email synchronization commands")
@@ -122,6 +123,24 @@ def sync_run(
     """Manually trigger email sync."""
     console.print("[bold blue]Starting email sync...[/bold blue]")
 
+    # Single-writer guard: if a deep reconciliation (or another incremental
+    # run) holds the lock, bow out cleanly rather than racing the DB and the
+    # provider connection pool.
+    try:
+        with sync_lock():
+            _sync_run_locked(account, max_messages, db_path)
+    except SyncLockHeld as e:
+        logger.info(f"Incremental sync skipped — {e}")
+        console.print("[dim]Another sync is already running; skipping this cycle.[/dim]")
+        raise typer.Exit(0)
+
+
+def _sync_run_locked(
+    account: Optional[str],
+    max_messages: int,
+    db_path: Path,
+) -> None:
+    """Body of `sync run`, executed while holding the advisory sync lock."""
     # Initialize database
     db = Database(db_path)
 
@@ -357,3 +376,129 @@ def sync_reclassify(
         console.print(f"[red]Reclassification failed: {e}[/red]")
         logger.exception("Reclassification error")
         raise typer.Exit(1)
+
+
+@sync_app.command("deep")
+def sync_deep(
+    account: Optional[str] = typer.Option(None, "--account", "-a", help="Account ID to reconcile"),
+    db_path: Path = typer.Option(
+        Path.home() / ".local/share/cairn-mail/mail.db",
+        "--db",
+        help="Database path",
+    ),
+) -> None:
+    """Full per-folder reconciliation against the provider (bypasses the
+    incremental SINCE window). Adds missing rows, purges server-side
+    deletions, and reconciles read/unread drift. Does not classify or
+    refetch bodies."""
+    console.print("[bold blue]Starting deep reconciliation...[/bold blue]")
+
+    # Share the single-writer lock with the incremental sync — only one of
+    # them touches the DB and provider pool at a time.
+    try:
+        with sync_lock():
+            _sync_deep_locked(account, db_path)
+    except SyncLockHeld as e:
+        logger.info(f"Deep reconciliation skipped — {e}")
+        console.print("[dim]Another sync is already running; skipping deep run.[/dim]")
+        raise typer.Exit(0)
+
+
+def _sync_deep_locked(account: Optional[str], db_path: Path) -> None:
+    """Body of `sync deep`, executed while holding the advisory sync lock."""
+    db = Database(db_path)
+
+    config = ConfigLoader.load_config()
+    if config:
+        ConfigLoader.sync_to_database(db, config)
+
+    if account:
+        db_account = db.get_account(account)
+        if not db_account:
+            console.print(f"[red]Account not found: {account}[/red]")
+            raise typer.Exit(1)
+        accounts = [db_account]
+    else:
+        accounts = db.list_accounts()
+
+    if not accounts:
+        console.print("[yellow]No accounts configured[/yellow]")
+        raise typer.Exit(0)
+
+    # deep_reconcile never calls the classifier, but SyncEngine requires one;
+    # build it the same way sync run does so the wiring stays consistent.
+    ai_config = _create_ai_config(config)
+    ai_classifier = AIClassifier(ai_config)
+
+    results = []
+    for db_account in accounts:
+        console.print(f"\n[bold]Reconciling account: {db_account.email}[/bold]")
+
+        provider = ProviderFactory.create_from_account(db_account)
+        try:
+            provider.authenticate()
+
+            sync_engine = SyncEngine(
+                provider=provider,
+                database=db,
+                ai_classifier=ai_classifier,
+                label_prefix=db_account.settings.get("label_prefix", "AI"),
+            )
+
+            result = sync_engine.deep_reconcile()
+            results.append(result)
+
+            if result.errors:
+                console.print(
+                    f"[yellow]⚠ Reconciliation completed with "
+                    f"{len(result.errors)} errors[/yellow]"
+                )
+            else:
+                console.print("[green]✓ Reconciliation completed[/green]")
+
+            console.print(f"  Folders reconciled: {result.reconciled_folders}")
+            console.print(f"  Messages added: {result.messages_added}")
+            console.print(f"  Messages purged: {result.messages_purged}")
+            console.print(f"  Flags updated: {result.flags_updated}")
+
+            # Surface safety-rail aborts as a single, grep-friendly line so
+            # they're obvious in journal output — a triggered rail means a
+            # folder enumeration likely failed and needs a human look.
+            if result.safety_rail_aborts:
+                console.print(
+                    f"  [bold red]SAFETY RAIL: {result.safety_rail_aborts} "
+                    f"folder(s) skipped on {db_account.email} — suspected "
+                    f"enumeration failure, no purges applied[/bold red]"
+                )
+
+            console.print(f"  Duration: {result.duration_seconds:.2f}s")
+
+        except Exception as e:
+            console.print(f"[red]Deep reconciliation failed for {db_account.email}: {e}[/red]")
+            logger.exception("Deep reconciliation error")
+        finally:
+            provider.release()
+
+    if results:
+        console.print("\n[bold]Deep Reconciliation Summary[/bold]")
+        table = Table()
+        table.add_column("Account")
+        table.add_column("Folders")
+        table.add_column("Added")
+        table.add_column("Purged")
+        table.add_column("Flags")
+        table.add_column("Aborts")
+        table.add_column("Errors")
+
+        for result in results:
+            table.add_row(
+                result.account_id,
+                str(result.reconciled_folders),
+                str(result.messages_added),
+                str(result.messages_purged),
+                str(result.flags_updated),
+                str(result.safety_rail_aborts),
+                str(len(result.errors)),
+            )
+
+        console.print(table)

@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from email.header import decode_header
-from typing import Dict, List, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set
 
 from ..base import BaseEmailProvider, Message, ProviderConfig
 from ..connection_pool import get_connection_pool
@@ -36,6 +36,10 @@ class IMAPConfig(ProviderConfig):
 
 class IMAPProvider(BaseEmailProvider):
     """IMAP email provider with KEYWORD extension support for tag synchronization."""
+
+    # Local rows are keyed account_id:imap_folder:uid — deep reconciliation
+    # diffs against the per-folder DB index.
+    uses_imap_folders = True
 
     def __init__(self, config: IMAPConfig):
         super().__init__(config)
@@ -619,6 +623,97 @@ class IMAPProvider(BaseEmailProvider):
                 logger.error(f"Error parsing message {msg_id}: {e}")
                 continue
 
+        return messages
+
+    def message_db_id(self, folder: str, uid: str) -> str:
+        """Build the local DB key for an IMAP (folder, uid) pair.
+
+        Matches the id format produced by `_parse_message`:
+        `account_id:imap_folder:uid`.
+        """
+        return f"{self.config.account_id}:{folder}:{uid}"
+
+    def list_all_uids(self, folder: str) -> Set[str]:
+        """Every UID in `folder` via `UID SEARCH ALL` (no SINCE window)."""
+        if not self.connection:
+            raise RuntimeError("Not authenticated. Call authenticate() first.")
+
+        if not self._select_folder(folder):
+            raise RuntimeError(f"Failed to select folder {folder}")
+
+        typ, data = self.connection.uid("SEARCH", None, "ALL")
+        if typ != "OK":
+            raise RuntimeError(f"IMAP UID SEARCH ALL failed for {folder}: {data}")
+
+        if not data or not data[0]:
+            return set()
+        return {uid.decode() for uid in data[0].split()}
+
+    def fetch_flags(
+        self, folder: str, uids: Iterable[str]
+    ) -> Dict[str, Set[str]]:
+        """Flags keyed by UID via a single `UID FETCH <set> (FLAGS)`."""
+        uid_list = [str(u) for u in uids]
+        if not uid_list:
+            return {}
+
+        if not self.connection:
+            raise RuntimeError("Not authenticated. Call authenticate() first.")
+
+        if not self._select_folder(folder):
+            raise RuntimeError(f"Failed to select folder {folder}")
+
+        typ, data = self.connection.uid("FETCH", ",".join(uid_list), "(FLAGS)")
+        if typ != "OK":
+            raise RuntimeError(f"IMAP UID FETCH FLAGS failed for {folder}: {data}")
+
+        result: Dict[str, Set[str]] = {}
+        for item in data:
+            if not item:
+                continue
+            # Each FETCH line looks like: b'12 (UID 345 FLAGS (\\Seen $work))'
+            line = item.decode("utf-8", errors="ignore") if isinstance(item, bytes) else str(item)
+            uid_match = re.search(r"UID (\d+)", line)
+            if not uid_match:
+                continue
+            result[uid_match.group(1)] = self._parse_flags(line)
+        return result
+
+    def fetch_envelope(
+        self, folder: str, uids: Iterable[str]
+    ) -> List[Message]:
+        """Hydrate Message objects for the given UIDs in `folder`.
+
+        Reuses the same per-UID `(RFC822 FLAGS)` fetch and `_parse_message`
+        path as the incremental fetch — the only difference is the caller
+        skips classification.
+        """
+        uid_list = [str(u) for u in uids]
+        if not uid_list:
+            return []
+
+        if not self.connection:
+            raise RuntimeError("Not authenticated. Call authenticate() first.")
+
+        if not self._select_folder(folder):
+            raise RuntimeError(f"Failed to select folder {folder}")
+
+        messages: List[Message] = []
+        for uid in uid_list:
+            try:
+                typ, msg_data = self.connection.uid("FETCH", uid, "(RFC822 FLAGS)")
+                if typ != "OK" or not msg_data or not msg_data[0]:
+                    logger.warning(f"Deep sync: failed to fetch UID {uid} in {folder}")
+                    continue
+
+                raw_email = msg_data[0][1]
+                email_message = email.message_from_bytes(raw_email)
+                flags_str = msg_data[0][0].decode("utf-8", errors="ignore")
+                flags = self._parse_flags(flags_str)
+                messages.append(self._parse_message(uid, email_message, flags, folder))
+            except Exception as e:
+                logger.error(f"Deep sync: error parsing UID {uid} in {folder}: {e}")
+                continue
         return messages
 
     def mark_as_read(self, message_id: str) -> None:

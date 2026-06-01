@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Protocol, Set
+from typing import Dict, Iterable, List, Optional, Protocol, Set
 
 
 @dataclass
@@ -230,6 +230,13 @@ class EmailProvider(Protocol):
 class BaseEmailProvider(ABC):
     """Abstract base class for email providers with common functionality."""
 
+    # Whether this provider's local DB rows are keyed per IMAP folder
+    # (id == account_id:imap_folder:uid) versus a flat provider-global id
+    # (Gmail). Deep reconciliation uses this to pick the right "all rows in
+    # this folder" DB query — the two providers key folders differently and
+    # the engine shouldn't branch on isinstance.
+    uses_imap_folders: bool = False
+
     def __init__(self, config: ProviderConfig):
         """Initialize provider with configuration.
 
@@ -269,6 +276,60 @@ class BaseEmailProvider(ABC):
     ) -> List[Message]:
         """Fetch messages from provider."""
         pass
+
+    @abstractmethod
+    def list_folders(self) -> List[str]:
+        """List the folders to walk for a full reconciliation.
+
+        For IMAP these are real folder names; for Gmail they are the logical
+        folders (inbox/sent/trash) the provider maps onto labels. Deep
+        reconciliation calls this fresh on each run so folders created since
+        any cached listing are still included.
+        """
+        pass
+
+    @abstractmethod
+    def list_all_uids(self, folder: str) -> Set[str]:
+        """Return every UID in `folder`, with no SINCE/date window.
+
+        Used by deep reconciliation to diff the full server-side set against
+        the local DB. IMAP issues `UID SEARCH ALL`; Gmail lists the label
+        without a date filter. Returns raw provider UIDs as strings.
+        """
+        pass
+
+    @abstractmethod
+    def fetch_flags(
+        self, folder: str, uids: Iterable[str]
+    ) -> Dict[str, Set[str]]:
+        """Return IMAP-style flags keyed by UID for the given UIDs in `folder`.
+
+        Gmail maps its label model onto this shape (absence of the UNREAD
+        label becomes a synthetic `\\Seen`). Used to reconcile read/unread
+        drift without refetching bodies.
+        """
+        pass
+
+    @abstractmethod
+    def fetch_envelope(
+        self, folder: str, uids: Iterable[str]
+    ) -> List[Message]:
+        """Hydrate `Message` objects for server UIDs newly discovered by deep
+        reconciliation.
+
+        Reuses the provider's normal message-parsing path so envelope/header
+        storage stays in one place, but the caller deliberately skips the AI
+        classifier for the results.
+        """
+        pass
+
+    def message_db_id(self, folder: str, uid: str) -> str:
+        """Build the local DB key for a (folder, uid) pair.
+
+        Default is the flat provider-global id (Gmail). IMAP overrides this
+        to encode account+folder+uid.
+        """
+        return str(uid)
 
     @abstractmethod
     def update_labels(

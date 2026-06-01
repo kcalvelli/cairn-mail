@@ -3,6 +3,33 @@
 All notable changes to cairn-mail. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), but with personality.
 
+## [Unreleased]
+
+### Added
+
+- **Weekly deep reconciliation sync.** The 5-minute incremental sync is
+  windowed — it only looks at messages newer than `last_sync - 1 day`, so
+  anything older drifts out of agreement with the provider and nothing ever
+  notices. `cairn-mail sync deep` walks *every* UID in *every* folder, diffs
+  it against the local DB, and reconciles existence (adds rows the server
+  has that we don't, purges rows the server dropped) plus read/unread drift.
+  It deliberately does **not** refetch bodies, run AI classification, fire
+  notifications, or touch the empty-sync backoff — it's a structural diff,
+  not a fetch.
+  - **Empty-folder safety rail.** A folder that returns zero server UIDs
+    while holding more than 5 local rows is treated as an enumeration
+    failure, not a mass deletion: it's logged at error level and skipped, no
+    purges applied. Same failure shape as the historical-archive purge bug,
+    now caught loudly instead of silently eating data.
+  - **Advisory lock against the 5-minute sync.** Both paths grab a
+    non-blocking file lock at `/run/cairn-mail/sync.lock` (falling back to
+    `$XDG_RUNTIME_DIR` for manual non-root runs). Whoever's second logs and
+    exits clean — no two writers on the DB and provider pool at once.
+  - **systemd timer** `cairn-mail-sync-deep.timer`, default `Sun 03:00`,
+    controlled by `services.cairn-mail.sync.deep.{enable,onCalendar}`. Off by
+    default. **Manual override:** `cairn-mail sync deep [--account ID]`, or
+    `sudo systemctl start cairn-mail-sync-deep.service` once enabled.
+
 ## [2.0.0] — 2026-05-01
 
 The "stable enough to stop touching" release. Project renamed from
