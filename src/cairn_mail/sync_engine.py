@@ -338,6 +338,15 @@ class SyncEngine:
             # 7. Update last sync timestamp
             self.db.update_last_sync(self.account_id, datetime.now(timezone.utc))
 
+            # Maintain the adaptive-backoff counter here so every caller
+            # (CLI timer, web UI trigger, future schedulers) updates it the
+            # same way. Anything that fetched messages resets the counter;
+            # a clean empty fetch bumps it.
+            if messages_fetched > 0:
+                self.db.reset_empty_syncs(self.account_id)
+            else:
+                self.db.increment_empty_syncs(self.account_id)
+
             # 8. Clean up old action log entries
             if self.action_agent:
                 try:

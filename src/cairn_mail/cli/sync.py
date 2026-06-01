@@ -1,6 +1,7 @@
 """Sync command for manual email synchronization."""
 
 import logging
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -21,24 +22,25 @@ console = Console()
 sync_app = typer.Typer(help="Email synchronization commands")
 logger = logging.getLogger(__name__)
 
-# Global sync cycle counter (increments each time the sync command runs)
-_sync_cycle: int = 0
+# The systemd sync timer fires every 5 minutes by default. The adaptive
+# backoff thinks in cycles, so derive a cycle number from the wall clock
+# (epoch / 5 minutes). This is stable across process restarts — the old
+# module-level counter reset to 0 every systemd invocation and left every
+# account permanently skipped once it hit 3 empty syncs.
+_CYCLE_SECONDS = 300
+
+
+def _current_cycle() -> int:
+    return int(time.time() // _CYCLE_SECONDS)
 
 
 def _should_skip_sync(consecutive_empty: int, cycle: int) -> bool:
     """Decide whether to skip syncing an account based on adaptive backoff.
 
-    Backoff schedule:
-        0-2 consecutive empty syncs: sync every cycle
-        3-5 consecutive empty syncs: sync every other cycle
-        6+  consecutive empty syncs: sync every 4th cycle
-
-    Args:
-        consecutive_empty: Number of consecutive syncs with no new messages.
-        cycle: Current global sync cycle counter.
-
-    Returns:
-        True if this account should be skipped on the current cycle.
+    Backoff schedule (assumes a 5-minute base cadence):
+        0-2 consecutive empty syncs: sync every cycle  (~5 min)
+        3-5 consecutive empty syncs: sync every other  (~10 min)
+        6+  consecutive empty syncs: sync every 4th    (~20 min)
     """
     if consecutive_empty <= 2:
         return False
@@ -143,9 +145,7 @@ def sync_run(
         console.print("\nAdd accounts to your home.nix configuration and run 'home-manager switch'")
         raise typer.Exit(0)
 
-    # Increment global sync cycle counter for adaptive backoff
-    global _sync_cycle
-    _sync_cycle += 1
+    cycle = _current_cycle()
 
     # Sync each account
     results = []
@@ -155,7 +155,7 @@ def sync_run(
         # otherwise user actions (mark read, trash, empty-trash) sit
         # stuck waiting for new mail to arrive on low-volume accounts.
         consecutive_empty = db.get_consecutive_empty_syncs(db_account.id)
-        backoff_fetch = _should_skip_sync(consecutive_empty, _sync_cycle)
+        backoff_fetch = _should_skip_sync(consecutive_empty, cycle)
         pending_ops = db.get_pending_operations(
             account_id=db_account.id, limit=1, status="pending"
         )
@@ -163,7 +163,7 @@ def sync_run(
         if backoff_fetch and not pending_ops:
             logger.info(
                 f"Skipping {db_account.email}: {consecutive_empty} consecutive "
-                f"empty syncs (cycle {_sync_cycle})"
+                f"empty syncs (cycle {cycle})"
             )
             console.print(
                 f"\n[dim]Skipping {db_account.email} "
@@ -217,15 +217,9 @@ def sync_run(
                 )
                 continue
 
-            # Run sync
+            # Run sync (engine maintains the empty-sync counter)
             result = sync_engine.sync(max_messages=max_messages)
             results.append(result)
-
-            # Update adaptive backoff counter
-            if result.messages_fetched == 0:
-                db.increment_empty_syncs(db_account.id)
-            else:
-                db.reset_empty_syncs(db_account.id)
 
             # Send push notifications for new messages (even if PWA is closed)
             if result.new_messages:
