@@ -242,7 +242,22 @@ class SyncEngine:
                 if message.imap_folder:
                     fetched_ids_by_folder.setdefault(message.imap_folder, set()).add(message.id)
 
+            # Folders where the provider's fetch hit max_results and got
+            # truncated. Purging against a truncated fetch deletes local
+            # rows for UIDs that still exist server-side — same shape of
+            # bug as the historical-archive purge incident.
+            truncated_folders: Set[str] = set()
+            if hasattr(self.provider, "get_truncated_folders"):
+                truncated_folders = self.provider.get_truncated_folders()
+
             for imap_folder, fetched_ids in fetched_ids_by_folder.items():
+                if imap_folder in truncated_folders:
+                    logger.warning(
+                        f"Skipping purge for {imap_folder} on "
+                        f"{self.account_id}: fetch was truncated, "
+                        f"cannot distinguish stale rows from unfetched ones"
+                    )
+                    continue
                 try:
                     stored_ids = self.db.get_message_ids_by_imap_folder(
                         account_id=self.account_id,
