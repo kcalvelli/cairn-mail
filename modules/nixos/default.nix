@@ -81,16 +81,18 @@ in {
       };
 
       # Weekly deep reconciliation: a full per-folder UID walk that closes the
-      # drift the windowed 5-minute sync can't see. Off by default until it's
-      # proven out on a live deployment.
+      # drift the windowed 5-minute sync can't see. On by default — proven out
+      # on a live deployment (edge, June 2026). IMAP only; label-based
+      # providers (Gmail) are skipped, see the cairn-mail sync engine.
       deep = {
         enable = mkOption {
           type = types.bool;
-          default = false;
+          default = true;
           description = ''
             Enable the weekly deep reconciliation timer. Runs a full
             per-folder UID diff against the provider, bypassing the
             incremental SINCE window. Does not refetch bodies or classify.
+            IMAP only — label-based providers (Gmail) are skipped.
           '';
         };
 

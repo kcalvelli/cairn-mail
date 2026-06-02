@@ -40,8 +40,8 @@
 ## 6. Verify and Roll Out
 
 - [x] 6.1 Build locally via `nix build` (or whatever the project's CI invocation is) to confirm the module change parses
-- [ ] 6.2 Push branch and rebuild `edge` with `services.cairn-mail.sync.deep.enable = true` in `nixos_config`
-- [ ] 6.3 Manually invoke `sudo systemctl start cairn-mail-sync-deep.service` and read the journal — verify reconciliation counts look plausible and that the safety rail did not abort spuriously
-- [ ] 6.4 Confirm the 5-minute timer continues firing without errors after the deep run completes
-- [ ] 6.5 Once a clean run is observed on `edge`, flip the module default `enable` to `true`
+- [x] 6.2 Push branch and rebuild `edge` with `services.cairn-mail.sync.deep.enable = true` in `nixos_config`
+- [x] 6.3 Manually invoke `sudo systemctl start cairn-mail-sync-deep.service` and read the journal — verify reconciliation counts look plausible and that the safety rail did not abort spuriously
+- [x] 6.4 Confirm the 5-minute timer continues firing without errors after the deep run completes
+- [x] 6.5 Once a clean run is observed on `edge`, flip the module default `enable` to `true`
 - [x] 6.6 Update `CHANGELOG.md` with the new feature and the manual override path
