@@ -3,7 +3,7 @@
 - [x] 1.1 Add abstract `list_all_uids(folder: str) -> set[str]` to `BaseEmailProvider` returning every UID in the named folder (no SINCE filter)
 - [x] 1.2 Add abstract `fetch_flags(folder: str, uids: Iterable[str]) -> dict[str, set[str]]` returning IMAP flags keyed by UID
 - [x] 1.3 Implement both methods in the IMAP provider using `UID SEARCH ALL` and `UID FETCH (FLAGS)` respectively
-- [x] 1.4 Implement both methods in the Gmail provider — for `list_all_uids` use the messages.list API without a date filter, for `fetch_flags` use messages.get with `format=metadata` and labelIds-as-flags mapping
+- [x] 1.4 Implement both methods in the Gmail provider — for `list_all_uids` use the messages.list API without a date filter, for `fetch_flags` use messages.get with `format=metadata` and labelIds-as-flags mapping. (Implemented to satisfy the abstract provider interface, but deep reconciliation does NOT call them: verification showed Gmail's stable-ID/label model breaks the per-folder "absence == deletion" diff — phantom adds and move-triggered purges. `deep_reconcile()` now gates on `provider.uses_imap_folders` and skips Gmail; these methods remain as the seed for a future label-aware design. See design.md decision 7.)
 - [x] 1.5 Add a `fetch_envelope(folder: str, uids: Iterable[str])` helper used by deep reconciliation to hydrate newly-discovered server UIDs without invoking the AI classifier — reuse the existing message-parsing logic, just skip the classifier call site
 
 ## 2. Sync Engine: Deep Reconciliation

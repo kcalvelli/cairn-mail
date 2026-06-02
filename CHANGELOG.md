@@ -29,6 +29,16 @@ All notable changes to cairn-mail. Format loosely follows
     controlled by `services.cairn-mail.sync.deep.{enable,onCalendar}`. Off by
     default. **Manual override:** `cairn-mail sync deep [--account ID]`, or
     `sudo systemctl start cairn-mail-sync-deep.service` once enabled.
+  - **IMAP only — Gmail is skipped (for now).** Deep reconciliation assumes
+    folder-scoped UIDs where "missing from a folder == deleted." Gmail uses
+    stable IDs with labels, so a relabeled message looks deleted and a
+    label/folder mismatch looks perpetually un-added — phantom add counts and
+    move-triggered local-row churn. So `deep_reconcile()` gates on the
+    provider and skips Gmail with a log line; Gmail stays covered by the
+    label-aware 5-minute incremental sync. Proper Gmail label-aware
+    reconciliation is deferred. The lock lives at `<db_dir>/sync.lock` (next
+    to the database), not `/run` — same path for the timer and a manual run,
+    so the two actually exclude each other.
 
 ## [2.0.0] — 2026-05-01
 

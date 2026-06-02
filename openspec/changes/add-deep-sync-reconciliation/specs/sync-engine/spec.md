@@ -2,7 +2,14 @@
 
 ### Requirement: Deep Reconciliation Sync
 
-The system SHALL provide a deep reconciliation mode that walks every folder for every account, diffs the full server UID set against the local message rows for that folder, and reconciles existence and flag state. This mode SHALL bypass the SINCE date window used by the regular incremental sync, but SHALL NOT refetch message bodies and SHALL NOT run AI classification.
+The system SHALL provide a deep reconciliation mode that walks every folder for every account whose provider uses folder-scoped, position-stable message IDs (IMAP), diffs the full server UID set against the local message rows for that folder, and reconciles existence and flag state. This mode SHALL bypass the SINCE date window used by the regular incremental sync, but SHALL NOT refetch message bodies and SHALL NOT run AI classification.
+
+For providers whose message IDs are stable across folder/label moves (e.g. label-based providers such as Gmail), the per-folder "absence == deletion" assumption does not hold, so the system SHALL skip deep reconciliation for those accounts and rely on the incremental sync to cover them. See design.md decision 7.
+
+#### Scenario: Label-based provider is skipped
+
+- **WHEN** deep reconciliation is invoked for an account whose provider does not use folder-scoped UIDs (e.g. Gmail)
+- **THEN** the system SHALL log that the account is skipped, SHALL NOT add, purge, or modify any local rows for that account, and SHALL continue with the remaining accounts
 
 #### Scenario: Server-side deletion outside the incremental window
 

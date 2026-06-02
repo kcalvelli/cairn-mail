@@ -87,6 +87,26 @@ The threshold exists for the genuinely-empty-folder case: a user actually deleti
 
 **Rationale:** Consistent with the existing `cairn-mail-sync.timer`. Reuses systemd's persistent scheduling, restart semantics, and journal logging. No need to invent a scheduler inside the long-running web service. The user runs NixOS — declarative timers are the native way to do this.
 
+### 7. Deep reconciliation is gated to folder/UID providers (IMAP); Gmail is skipped (decided during verification)
+
+**Decision:** `deep_reconcile()` runs only for providers where `uses_imap_folders` is true (IMAP). For label-based providers (Gmail) it logs an info line and returns a zeroed result without walking anything. The Gmail `list_all_uids` / `fetch_flags` / `fetch_envelope` implementations stay (they satisfy the abstract provider interface and are the seed for future Gmail support) but are not invoked by deep reconciliation.
+
+**Why — what verification turned up.** The first live runs on `edge` looked clean on the surface (no errors, no aborts) but the counters never settled for the Gmail account: two back-to-back runs *2 seconds apart* both reported `added: 1`, while all three IMAP accounts went to `added: 0` on the immediate second run. Digging into the DB explained it:
+
+- Gmail's local rows are keyed by a **stable, provider-global ID** and carry a logical `folder` derived from *labels* (`inbox`/`sent`/`deleting`/…), not a folder-scoped UID. The on-disk taxonomy didn't even contain a `trash` folder (`deleting: 22, inbox: 8, sent: 27`), yet deep walks the logical folders `inbox`/`sent`/`trash`.
+- The per-folder diff assumes **absence from a folder's enumeration == deletion**. That is only true when IDs are folder-scoped and change on move (IMAP UIDs). With Gmail's stable IDs, a message that is merely relabeled (e.g. `inbox → trash`) still exists server-side under the same ID, so:
+  - **Phantom adds:** a message whose label-derived `folder` differs from the queried folder is never in that folder's local set, so it is "added" every run. Harmless (`create_or_update_message` upserts by stable ID, so no duplicate rows — row count held at 57 across runs) but it permanently pollutes the `added` counter, which is the exact signal the feature exists to make legible.
+  - **Unsafe purges:** a message moved `inbox → trash` on another client looks "missing" from `in:inbox` and the local row gets purged. Only the *local* row (server copy untouched, so it's recoverable on the next fetch), but it churns local read-state and classifications. The very first Gmail run's `purged: 4` was almost certainly this, not real deletions.
+
+This is precisely the case Non-Goal #3 ("per-message label diffing for Gmail-style cross-folder semantics") reserved for later. Verification promoted it from "theoretical" to "observed," so we draw the line here rather than ship a counter you can't trust and purges you can't.
+
+**Rationale for the gate (vs. patching the symptoms):** A cheap "skip IDs already in the DB regardless of folder" guard would kill the phantom adds but leaves the unsafe-purge behavior, because purge-on-folder-absence is wrong for stable-ID providers no matter how you count. The correct Gmail design is a label-aware diff (reconcile label membership per stable ID, never purge on single-folder absence) — a separate, larger piece of work. Until then, IMAP — the self-hosted primary accounts — gets full deep reconciliation, and Gmail keeps relying on the label-aware 5-minute incremental sync (which already fetches `in:all -in:draft -in:spam`) plus `reclassify`.
+
+**Alternatives considered:**
+- Phantom-add guard only — rejected, leaves the unsafe purge.
+- Full Gmail label-aware reconciliation now — deferred; it's a non-goal and a real design effort, not a patch.
+- Leave it as-is and document — rejected; an always-nonzero `added` and move-triggered local purges actively degrade trust in the feature.
+
 ## Risks / Trade-offs
 
 - **[Mass deletion via enumeration failure]** → Per-folder safety rail (decision 3). Loud error log when triggered; the run continues for other folders.

@@ -473,6 +473,33 @@ class SyncEngine:
 
         logger.info(f"Starting deep reconciliation for account {self.account_id}")
 
+        # The per-folder UID diff assumes folder-scoped, position-stable IDs:
+        # a message that leaves a folder gets a new ID, so absence == deletion.
+        # That holds for IMAP. It does NOT hold for label-based providers
+        # (Gmail), where IDs are stable across label moves — so "missing from
+        # this folder's query" means "relabeled", not "deleted", and purging
+        # on it churns local state, while label-vs-folder mismatch makes the
+        # same message look perpetually un-added. Reconciling that correctly is
+        # a deferred non-goal (see design.md); until it's designed, skip these
+        # providers here. Gmail stays covered by the label-aware 5-minute sync.
+        if not self.provider.uses_imap_folders:
+            logger.info(
+                f"Skipping deep reconciliation for {self.account_id}: provider "
+                f"is not folder/UID based (label semantics not yet supported). "
+                f"Incremental sync continues to cover this account."
+            )
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+            return DeepReconcileResult(
+                account_id=self.account_id,
+                reconciled_folders=0,
+                messages_added=0,
+                messages_purged=0,
+                flags_updated=0,
+                safety_rail_aborts=0,
+                errors=errors,
+                duration_seconds=duration,
+            )
+
         try:
             # Fresh listing (no cache) so folders created since the last
             # incremental sync are included.
