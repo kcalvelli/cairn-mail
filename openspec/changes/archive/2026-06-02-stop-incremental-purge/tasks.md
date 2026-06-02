@@ -23,8 +23,8 @@
 
 ## 5. Deployment & Verification
 
-- [ ] 5.1 Commit + push to `main` (Keith's call)
-- [ ] 5.2 Bump the cairn-mail flake input in `~/.config/nixos_config` and `nixos-rebuild switch` on edge
-- [ ] 5.3 Confirm the incremental sync runs with no purge log lines and no `messages_purged` deletions
-- [ ] 5.4 Confirm `cairn-mail-sync-deep.timer` shows the daily `OnCalendar=*-*-* 03:00:00` cadence
-- [ ] 5.5 Run `sync deep` once to restore everything the purge ate (verify the `companies` INBOX block incl. UID 42936 returns and persists across the next incremental sync)
+- [x] 5.1 Commit + push to `main` (`fc5d47d8`)
+- [x] 5.2 Bump the cairn-mail flake input in `~/.config/nixos_config` and `nixos-rebuild switch` on edge
+- [x] 5.3 Confirm the incremental sync runs with no purge log lines and no `messages_purged` deletions (12:53 run: no "Purged … stale" lines)
+- [x] 5.4 Confirm `cairn-mail-sync-deep.timer` shows the daily `OnCalendar=*-*-* 03:00:00` cadence (next fire Wed 03:00)
+- [x] 5.5 Run `sync deep` to restore everything the purge ate — `companies` INBOX block 42930–42936 (incl. the invoice, UID 42936) is back and survived the 12:53 incremental; deep is now idempotent (added=0/purged=0, local==server)
