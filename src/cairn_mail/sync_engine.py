@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import List, Optional, Set
 
 from .action_agent import ActionAgent
@@ -165,7 +165,6 @@ class SyncEngine:
         labels_updated = 0
         pending_ops_processed = 0
         pending_ops_failed = 0
-        messages_purged = 0
         actions_processed = 0
         actions_succeeded = 0
         actions_failed = 0
@@ -242,78 +241,18 @@ class SyncEngine:
                     logger.error(error_msg)
                     errors.append(error_msg)
 
-            # 5. Purge stale messages (provider is authoritative)
-            # Bound the purge to the window the incremental fetch actually
-            # covers. IMAP SINCE is day-granular and server clocks drift, so
-            # back off by a day before flooring to the start of the SINCE day.
-            # Stored messages older than that cutoff are out of scope — we
-            # never asked the server about them this round, so absence from
-            # the fetch tells us nothing.
-            if last_sync is not None:
-                # last_sync is stored UTC but SQLite returns it naive;
-                # Message.date is naive local. Reattach UTC, convert to
-                # local, then floor and back off a day.
-                last_sync_utc = (
-                    last_sync.replace(tzinfo=timezone.utc)
-                    if last_sync.tzinfo is None
-                    else last_sync
-                )
-                local_cutoff = last_sync_utc.astimezone().replace(tzinfo=None)
-                purge_cutoff: Optional[datetime] = (
-                    local_cutoff.replace(hour=0, minute=0, second=0, microsecond=0)
-                    - timedelta(days=1)
-                )
-            else:
-                # No prior sync → fetch was unbounded, so reconcile everything.
-                purge_cutoff = None
-
-            # Pre-seed with every folder the provider successfully queried.
-            # Without this, a folder that returned zero messages from the
-            # incremental fetch (quiescent server-side folder) would silently
-            # skip purge — letting stale local records linger across syncs.
-            fetched_ids_by_folder: dict[str, Set[str]] = {}
-            if hasattr(self.provider, "get_last_queried_imap_folders"):
-                for f in self.provider.get_last_queried_imap_folders():
-                    fetched_ids_by_folder[f] = set()
-            for message in messages:
-                if message.imap_folder:
-                    fetched_ids_by_folder.setdefault(message.imap_folder, set()).add(message.id)
-
-            # Folders where the provider's fetch hit max_results and got
-            # truncated. Purging against a truncated fetch deletes local
-            # rows for UIDs that still exist server-side — same shape of
-            # bug as the historical-archive purge incident.
-            truncated_folders: Set[str] = set()
-            if hasattr(self.provider, "get_truncated_folders"):
-                truncated_folders = self.provider.get_truncated_folders()
-
-            for imap_folder, fetched_ids in fetched_ids_by_folder.items():
-                if imap_folder in truncated_folders:
-                    logger.warning(
-                        f"Skipping purge for {imap_folder} on "
-                        f"{self.account_id}: fetch was truncated, "
-                        f"cannot distinguish stale rows from unfetched ones"
-                    )
-                    continue
-                try:
-                    stored_ids = self.db.get_message_ids_by_imap_folder(
-                        account_id=self.account_id,
-                        imap_folder=imap_folder,
-                        since=purge_cutoff,
-                    )
-                    stale_ids = stored_ids - fetched_ids
-                    for stale_id in stale_ids:
-                        self.db.delete_message(stale_id)
-                        messages_purged += 1
-                    if stale_ids:
-                        logger.info(
-                            f"Purged {len(stale_ids)} stale messages from "
-                            f"{imap_folder} for {self.account_id}"
-                        )
-                except Exception as e:
-                    error_msg = f"Failed to purge stale messages from {imap_folder}: {e}"
-                    logger.error(error_msg)
-                    errors.append(error_msg)
+            # 5. (No purge here — by design.)
+            # The incremental sync only ever ADDS and UPDATES. It never deletes
+            # local rows to mirror server-side deletions, because it fetches a
+            # windowed slice (SINCE last_sync) and can't see the full mailbox.
+            # Inferring "the server deleted X" from "X wasn't in a partial
+            # fetch" is how this client used to eat live mail (see the
+            # one-day-band purge bug). Detecting external deletions requires a
+            # complete UID-set diff, which is exactly what deep_reconcile()
+            # does — with an empty-folder safety rail — on the daily timer.
+            # User-initiated deletes still apply instantly via the pending-ops
+            # queue + db.delete_message; this only defers reconciling deletions
+            # made in *other* clients to the next deep pass.
 
             # 6. Classify unclassified inbox messages (no point tagging sent/trash)
             to_classify = [
@@ -417,7 +356,6 @@ class SyncEngine:
                 new_messages=new_messages,
                 pending_ops_processed=pending_ops_processed,
                 pending_ops_failed=pending_ops_failed,
-                messages_purged=messages_purged,
                 actions_processed=actions_processed,
                 actions_succeeded=actions_succeeded,
                 actions_failed=actions_failed,

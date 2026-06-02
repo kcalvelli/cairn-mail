@@ -48,15 +48,6 @@ class IMAPProvider(BaseEmailProvider):
         self._current_folder: Optional[str] = None
         self._folder_mapping: Optional[Dict[str, str]] = None  # Cache discovered folder mapping
         self._using_pool: bool = False  # Track if we got connection from pool
-        # Folders successfully queried during the most recent fetch_messages
-        # call. The sync engine consumes this to drive its purge sweep
-        # across folders that returned zero results.
-        self._last_queried_imap_folders: Set[str] = set()
-        # Folders whose most recent fetch hit the max_results cap and was
-        # silently truncated. The sync engine must skip purging these
-        # folders — comparing a truncated fetch against the full stored
-        # set looks like "everything missing is stale" and eats data.
-        self._truncated_imap_folders: Set[str] = set()
 
     def _create_connection(self) -> imaplib.IMAP4_SSL:
         """Create a new IMAP connection (used by pool)."""
@@ -146,27 +137,6 @@ class IMAPProvider(BaseEmailProvider):
             return "INBOX", parts[1]
         else:
             raise ValueError(f"Invalid message ID format: {message_id}")
-
-    def get_last_queried_imap_folders(self) -> Set[str]:
-        """IMAP folders that returned a successful SEARCH in the most
-        recent fetch_messages call.
-
-        The sync engine uses this to drive the purge sweep across folders
-        that returned zero messages — without it, stale local records in
-        quiescent folders never get reconciled.
-        """
-        return set(self._last_queried_imap_folders)
-
-    def get_truncated_folders(self) -> Set[str]:
-        """IMAP folders whose most recent fetch was truncated by the
-        max_results cap.
-
-        The sync engine must skip purging these folders — the fetch
-        returned a subset of server-side UIDs, so any local row missing
-        from the fetch may still exist server-side and would be wrongly
-        purged.
-        """
-        return set(self._truncated_imap_folders)
 
     def _find_uid_by_rfc822_id(
         self, folder: str, rfc822_message_id: str
@@ -492,10 +462,6 @@ class IMAPProvider(BaseEmailProvider):
         if not self.connection:
             raise RuntimeError("Not authenticated. Call authenticate() first.")
 
-        # Reset per-round tracking.
-        self._last_queried_imap_folders = set()
-        self._truncated_imap_folders = set()
-
         # If specific folder requested, fetch from that folder only
         if folder:
             return self._fetch_from_folder(folder, since, max_results)
@@ -578,21 +544,16 @@ class IMAPProvider(BaseEmailProvider):
             logger.error("IMAP UID SEARCH failed")
             return []
 
-        # Mark folder as successfully queried. Used by sync_engine to
-        # reconcile stale local records in folders that came back empty.
-        self._last_queried_imap_folders.add(folder)
-
         msg_ids = msg_ids_data[0].split()
 
-        # Limit results (take most recent). Record the truncation so the
-        # sync engine knows not to purge this folder against an incomplete
-        # fetch — see get_truncated_folders().
+        # Limit results (take most recent). The incremental sync no longer
+        # purges, so a truncated fetch just means older mail waits for the
+        # next round / deep reconciliation — it can't cause data loss.
         if len(msg_ids) > max_results:
             logger.warning(
                 f"Truncating fetch for {folder}: {len(msg_ids)} UIDs available, "
-                f"max_results={max_results}; purge will be skipped this round"
+                f"max_results={max_results}; older messages deferred to a later sync"
             )
-            self._truncated_imap_folders.add(folder)
             msg_ids = msg_ids[-max_results:]
 
         logger.debug(f"Found {len(msg_ids)} messages in {folder}")

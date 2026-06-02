@@ -5,30 +5,55 @@ All notable changes to cairn-mail. Format loosely follows
 
 ## [Unreleased]
 
+### Removed
+
+- **The incremental sync no longer purges. At all.** It only adds and updates
+  now. Detecting that the server deleted a message is handed entirely to deep
+  reconciliation (below), which runs daily. Why: the 5-minute sync fetches a
+  *windowed* slice (`SINCE last_sync`), so it never sees the whole mailbox —
+  and inferring "the server deleted X" from "X wasn't in a partial fetch" is
+  unsound. It cost us live mail: the old purge anchored its cutoff a full day
+  *earlier* than the fetch looked, opening a one-day band ("yesterday") where
+  local rows were purge-eligible but never re-fetched, so any message dated
+  the day before a sync got deleted while still sitting on the server. Deep
+  reconciliation would re-add the block and the next incremental sync would
+  wipe it again — the "added 10 → added 18" oscillation was this. An email
+  client does not get to delete your mail on a guess. A complete UID-set diff
+  (deep reconcile, with its empty-folder safety rail) is the only safe way to
+  mirror deletions, so that's the only thing that does it now. User-initiated
+  deletes still apply instantly via the pending-ops queue. Caught when a known
+  invoice vanished from `companies@calvelli.us` while still live in INBOX.
+  (The buggy windowed purge dated to `0bc75329`, itself a fix to stop the
+  purge eating the *historical* archive — it just overshot by a day. Rather
+  than re-tune a fundamentally fragile heuristic, it's gone.)
+
 ### Added
 
-- **Weekly deep reconciliation sync.** The 5-minute incremental sync is
-  windowed — it only looks at messages newer than `last_sync - 1 day`, so
-  anything older drifts out of agreement with the provider and nothing ever
-  notices. `cairn-mail sync deep` walks *every* UID in *every* folder, diffs
-  it against the local DB, and reconciles existence (adds rows the server
-  has that we don't, purges rows the server dropped) plus read/unread drift.
-  It deliberately does **not** refetch bodies, run AI classification, fire
-  notifications, or touch the empty-sync backoff — it's a structural diff,
-  not a fetch.
+- **Daily deep reconciliation sync.** The 5-minute incremental sync is
+  windowed — it only fetches recent mail, so anything older drifts out of
+  agreement with the provider and nothing ever notices. `cairn-mail sync deep`
+  walks *every* UID in *every* folder, diffs it against the local DB, and
+  reconciles existence (adds rows the server has that we don't, purges rows
+  the server genuinely dropped) plus read/unread drift. It is now the **sole**
+  owner of deletion reconciliation (see Removed, above), which is why it runs
+  daily rather than weekly. It deliberately does **not** refetch bodies, run
+  AI classification, fire notifications, or touch the empty-sync backoff —
+  it's a structural diff, not a fetch.
   - **Empty-folder safety rail.** A folder that returns zero server UIDs
     while holding more than 5 local rows is treated as an enumeration
     failure, not a mass deletion: it's logged at error level and skipped, no
     purges applied. Same failure shape as the historical-archive purge bug,
     now caught loudly instead of silently eating data.
   - **Advisory lock against the 5-minute sync.** Both paths grab a
-    non-blocking file lock at `/run/cairn-mail/sync.lock` (falling back to
-    `$XDG_RUNTIME_DIR` for manual non-root runs). Whoever's second logs and
-    exits clean — no two writers on the DB and provider pool at once.
-  - **systemd timer** `cairn-mail-sync-deep.timer`, default `Sun 03:00`,
-    controlled by `services.cairn-mail.sync.deep.{enable,onCalendar}`. Off by
-    default. **Manual override:** `cairn-mail sync deep [--account ID]`, or
-    `sudo systemctl start cairn-mail-sync-deep.service` once enabled.
+    non-blocking file lock at `<db_dir>/sync.lock` (beside the database, so
+    the timer and a manual run resolve to the same path and actually exclude
+    each other). Whoever's second logs and exits clean — no two writers on the
+    DB and provider pool at once.
+  - **systemd timer** `cairn-mail-sync-deep.timer`, default `*-*-* 03:00:00`
+    (daily at 03:00), controlled by
+    `services.cairn-mail.sync.deep.{enable,onCalendar}`. On by default.
+    **Manual override:** `cairn-mail sync deep [--account ID]`, or
+    `sudo systemctl start cairn-mail-sync-deep.service`.
   - **IMAP only — Gmail is skipped (for now).** Deep reconciliation assumes
     folder-scoped UIDs where "missing from a folder == deleted." Gmail uses
     stable IDs with labels, so a relabeled message looks deleted and a

@@ -80,27 +80,32 @@ in {
         example = "5min";
       };
 
-      # Weekly deep reconciliation: a full per-folder UID walk that closes the
-      # drift the windowed 5-minute sync can't see. On by default — proven out
-      # on a live deployment (edge, June 2026). IMAP only; label-based
-      # providers (Gmail) are skipped, see the cairn-mail sync engine.
+      # Daily deep reconciliation: a full per-folder UID walk that closes the
+      # drift the windowed 5-minute sync can't see. This is now the ONLY thing
+      # that mirrors server-side deletions into the local DB — the incremental
+      # sync never purges (it can't tell a deleted message from one outside its
+      # fetch window without eating live mail). Runs daily so deletions made in
+      # other clients reconcile within a day. IMAP only; label-based providers
+      # (Gmail) are skipped, see the cairn-mail sync engine.
       deep = {
         enable = mkOption {
           type = types.bool;
           default = true;
           description = ''
-            Enable the weekly deep reconciliation timer. Runs a full
+            Enable the daily deep reconciliation timer. Runs a full
             per-folder UID diff against the provider, bypassing the
-            incremental SINCE window. Does not refetch bodies or classify.
-            IMAP only — label-based providers (Gmail) are skipped.
+            incremental SINCE window. This is what detects and mirrors
+            server-side deletions (the incremental sync never purges).
+            Does not refetch bodies or classify. IMAP only — label-based
+            providers (Gmail) are skipped.
           '';
         };
 
         onCalendar = mkOption {
           type = types.str;
-          default = "Sun 03:00";
+          default = "*-*-* 03:00:00";
           description = "When to run deep reconciliation (systemd OnCalendar format).";
-          example = "daily";
+          example = "weekly";
         };
       };
     };
@@ -176,7 +181,7 @@ in {
       };
     };
 
-    # Deep reconciliation service: full per-folder UID walk, weekly.
+    # Deep reconciliation service: full per-folder UID walk, daily.
     systemd.services.cairn-mail-sync-deep = mkIf (cfg.sync.enable && cfg.sync.deep.enable) {
       description = "cairn-mail deep reconciliation service";
       after = [ "network-online.target" ];
@@ -203,7 +208,7 @@ in {
       };
     };
 
-    # Deep reconciliation timer: weekly by default (Sun 03:00).
+    # Deep reconciliation timer: daily by default (03:00).
     systemd.timers.cairn-mail-sync-deep = mkIf (cfg.sync.enable && cfg.sync.deep.enable) {
       description = "cairn-mail deep reconciliation timer";
       wantedBy = [ "timers.target" ];
