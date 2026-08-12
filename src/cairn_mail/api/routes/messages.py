@@ -175,7 +175,7 @@ async def list_messages(
 
     except Exception as e:
         logger.error(f"Error listing messages: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/messages/unread-count")
@@ -211,7 +211,7 @@ async def get_unread_count(
         return {"count": count}
     except Exception as e:
         logger.error(f"Error getting unread count: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/bulk/read")
@@ -268,7 +268,7 @@ async def bulk_mark_read(request: Request, body: BulkReadRequest):
 
     except Exception as e:
         logger.error(f"Error in bulk mark read: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/bulk/delete")
@@ -322,7 +322,7 @@ async def bulk_delete(request: Request, body: BulkDeleteRequest):
 
     except Exception as e:
         logger.error(f"Error in bulk delete: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/bulk/restore")
@@ -376,7 +376,7 @@ async def bulk_restore(request: Request, body: BulkDeleteRequest):
 
     except Exception as e:
         logger.error(f"Error in bulk restore: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/bulk/permanent-delete")
@@ -443,7 +443,7 @@ async def bulk_permanent_delete(request: Request, body: BulkDeleteRequest):
 
     except Exception as e:
         logger.error(f"Error in bulk permanent delete: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 class BulkTagsRequest(BaseModel):
@@ -508,7 +508,7 @@ async def bulk_update_tags(request: Request, body: BulkTagsRequest):
 
     except Exception as e:
         logger.error(f"Error in bulk update tags: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/messages/{message_id}", response_model=MessageResponse)
@@ -528,7 +528,7 @@ async def get_message(request: Request, message_id: str):
         raise
     except Exception as e:
         logger.error(f"Error getting message {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.put("/messages/{message_id}/tags", response_model=MessageResponse)
@@ -578,7 +578,7 @@ async def update_message_tags(
         raise
     except Exception as e:
         logger.error(f"Error updating tags for message {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/messages/{message_id}/body")
@@ -675,7 +675,7 @@ async def get_message_body(request: Request, message_id: str):
         raise
     except Exception as e:
         logger.error(f"Error getting message body {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/{message_id}/read", response_model=MessageResponse)
@@ -719,7 +719,7 @@ async def mark_message_read(
         raise
     except Exception as e:
         logger.error(f"Error marking message {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.delete("/messages/{message_id}")
@@ -758,7 +758,7 @@ async def delete_message(request: Request, message_id: str):
         raise
     except Exception as e:
         logger.error(f"Error deleting message {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/{message_id}/restore")
@@ -796,7 +796,7 @@ async def restore_message(request: Request, message_id: str):
         raise
     except Exception as e:
         logger.error(f"Error restoring message {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/delete-all")
@@ -856,7 +856,7 @@ async def delete_all_messages(
 
     except Exception as e:
         logger.error(f"Error in delete all: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/messages/clear-trash")
@@ -917,7 +917,7 @@ async def clear_trash(request: Request):
 
     except Exception as e:
         logger.error(f"Error clearing trash: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/messages/search")
@@ -977,7 +977,7 @@ async def search_messages(
 
     except Exception as e:
         logger.error(f"Error searching messages: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/messages/{message_id}/smart-replies", response_model=SmartReplyResponse)
@@ -1075,4 +1075,4 @@ async def get_smart_replies(request: Request, message_id: str):
         raise
     except Exception as e:
         logger.error(f"Error getting smart replies for {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

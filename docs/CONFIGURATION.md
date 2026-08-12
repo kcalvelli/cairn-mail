@@ -55,6 +55,8 @@ services.cairn-mail = {
   user = "youruser";
   group = "users";
   openFirewall = false;
+  tokenFile = config.age.secrets.cairn-mail-token.path;  # required
+  allowedHosts = [ "edge.tailnet-1234.ts.net" ];         # optional
 };
 ```
 
@@ -66,6 +68,36 @@ services.cairn-mail = {
 | `user` | string | *required* | User to run as (reads config from their home) |
 | `group` | string | `"users"` | Group to run as |
 | `openFirewall` | boolean | `false` | Open firewall port for web UI |
+| `tokenFile` | path | *required* | File holding the shared API bearer token (point at an agenix/sops secret) |
+| `allowedHosts` | list of string | `[]` | Extra `Host` values accepted by the API (loopback always allowed) |
+
+### Authentication
+
+The API and WebSocket are guarded by a single shared **bearer token** — there is
+no per-user login. Every request must send `Authorization: Bearer <token>`; the
+WebSocket sends it as a `?token=` query parameter. The web UI prompts for the
+token on first use and stores it in the browser.
+
+- **`tokenFile`** is **required**. Put a random secret (e.g. `openssl rand -hex 32`)
+  in an agenix/sops secret and point `tokenFile` at it. It's delivered to the
+  service via systemd `LoadCredential` — never copied into the Nix store or
+  `$HOME`. The API **refuses to start** if the file is missing or empty
+  (fail-closed).
+- **`allowedHosts`** hardens against DNS rebinding. Loopback (`localhost`,
+  `127.0.0.1`) is always allowed; add your machine's Tailscale FQDN here. If left
+  empty the API accepts any `Host` (and logs a warning) — the token remains the
+  real boundary either way.
+
+**MCP server:** the MCP server calls the API over HTTP and needs the same token
+in its environment — set `CAIRN_MAIL_API_TOKEN` (literal) or
+`CAIRN_MAIL_TOKEN_FILE` (path). Without it, API-backed tools return a descriptive
+error instead of sending unauthenticated requests.
+
+```nix
+# Example agenix secret feeding the token
+age.secrets.cairn-mail-token.file = ../secrets/cairn-mail-token.age;
+services.cairn-mail.tokenFile = config.age.secrets.cairn-mail-token.path;
+```
 
 ### Sync Timer
 

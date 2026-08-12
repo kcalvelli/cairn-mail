@@ -119,4 +119,4 @@ async def send_message(send_request: SendRequest, request: Request):
 
     except Exception as e:
         logger.error(f"Failed to send message for draft {draft_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to send message: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to send message")

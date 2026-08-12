@@ -9,6 +9,7 @@ import { messageKeys } from './useMessages';
 import { statsKeys } from './useStats';
 import { useNotifications } from './useNotifications';
 import { useToastStore } from './useToast';
+import { withWsToken } from '../api/token';
 import type { WebSocketMessage } from '../api/types';
 
 // Human-readable labels for action tags
@@ -29,7 +30,7 @@ export function useWebSocket() {
     // Determine WebSocket URL based on current location
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws`;
+    const wsUrl = withWsToken(`${protocol}//${host}/ws`);
 
     // Create WebSocket connection
     const ws = new WebSocket(wsUrl);

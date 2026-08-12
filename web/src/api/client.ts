@@ -3,6 +3,7 @@
  */
 
 import axios from 'axios';
+import { applyToken, clearToken, getToken, notifyAuthRequired } from './token';
 import type {
   MessagesListResponse,
   Message,
@@ -21,6 +22,10 @@ import type {
   TrustedSenderCheckResponse,
 } from './types';
 
+// Apply any stored token to axios defaults at module load (covers raw-axios
+// call sites elsewhere in the app, not just this instance).
+applyToken(getToken());
+
 // Create axios instance
 const api = axios.create({
   baseURL: '/api',
@@ -32,14 +37,30 @@ const api = axios.create({
   },
 });
 
-// Add response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
+// Attach the bearer token per-request (picks up a token entered after load).
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+});
+
+// On 401: forget the (missing/stale) token and ask the app to prompt for one.
+function handle401(error: any) {
+  if (error.response?.status === 401) {
+    clearToken();
+    notifyAuthRequired();
+  } else {
+    console.error('API Error:', error.response?.data || error.message);
+  }
+  return Promise.reject(error);
+}
+
+api.interceptors.response.use((response) => response, handle401);
+// Raw-axios call sites (Compose, MessageDetail, Settings, …) go through the
+// global instance — guard them too until they're migrated onto `api`.
+axios.interceptors.response.use((response) => response, handle401);
 
 // Message endpoints
 export const messages = {

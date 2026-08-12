@@ -5,6 +5,28 @@ All notable changes to cairn-mail. Format loosely follows
 
 ## [Unreleased]
 
+### Security
+
+- **The API now requires a bearer token. All of it.** Until now every route, the
+  WebSocket, and the destructive endpoints (`bulk/permanent-delete`,
+  `delete-all`, `clear-trash`) were wide open to anything that could reach the
+  port — which, over Tailscale, is every device on the tailnet, plus any browser
+  on it via DNS rebinding. One unauthenticated request could read all your mail,
+  send as you, or nuke the mailbox. That's fixed: a single shared token guards
+  everything except `/api/health`, `/api/version`, `/api/clear-sw`, and the
+  static app shell. The WebSocket authenticates on the handshake (`?token=`), a
+  `TrustedHostMiddleware` closes the rebinding hole, and 500s no longer echo
+  exception text back to the caller.
+  - **BREAKING.** Every client needs the token now. Set
+    `services.cairn-mail.tokenFile` to an agenix/sops secret (delivered via
+    systemd `LoadCredential`, never touches the Nix store) — the service
+    **refuses to start** without it. The web UI prompts for the token on first
+    load and remembers it. The MCP server needs `CAIRN_MAIL_API_TOKEN` (or
+    `CAIRN_MAIL_TOKEN_FILE`) in its environment or its tools stop working.
+    Rollout order: provision the secret → deploy (UI re-prompts) → set the MCP
+    env. Optionally set `allowedHosts` to your tailnet FQDN to turn on
+    host-pinning. See docs/CONFIGURATION.md → Authentication.
+
 ### Removed
 
 - **The incremental sync no longer purges. At all.** It only adds and updates

@@ -367,7 +367,7 @@ async def refresh_stats(request: Request):
         )
     except Exception as e:
         logger.error(f"Failed to refresh stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to refresh stats: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to refresh stats")
 
 
 class FeedbackCleanupResponse(BaseModel):
@@ -407,7 +407,7 @@ async def cleanup_feedback(
         )
     except Exception as e:
         logger.error(f"Failed to cleanup feedback: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to cleanup feedback: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to cleanup feedback")
 
 
 @router.get("/tag-config", response_model=TagConfigResponse)

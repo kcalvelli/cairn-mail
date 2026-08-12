@@ -64,7 +64,7 @@ async def subscribe(request: Request, body: PushSubscriptionRequest):
         return {"status": "subscribed"}
     except Exception as e:
         logger.error(f"Failed to store push subscription: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.delete("/push/unsubscribe")
@@ -81,4 +81,4 @@ async def unsubscribe(request: Request, body: UnsubscribeRequest):
         raise
     except Exception as e:
         logger.error(f"Failed to remove push subscription: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

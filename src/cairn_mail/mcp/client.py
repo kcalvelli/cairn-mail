@@ -5,13 +5,37 @@ decoupling MCP logic from API implementation.
 """
 
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
+
+# The API now requires a bearer token. The MCP server may run alongside the
+# service (sharing its LoadCredential file) or in a separate agent host, so we
+# accept either a literal token or a file path.
+TOKEN_ENV = "CAIRN_MAIL_API_TOKEN"
+TOKEN_FILE_ENV = "CAIRN_MAIL_TOKEN_FILE"
+
+
+def _resolve_api_token() -> str | None:
+    """Resolve the API token from the environment (literal, then file)."""
+    literal = os.environ.get(TOKEN_ENV, "").strip()
+    if literal:
+        return literal
+    path_str = os.environ.get(TOKEN_FILE_ENV)
+    if path_str:
+        try:
+            token = Path(path_str).read_text().strip()
+        except OSError as e:
+            logger.warning("Could not read %s at %s: %s", TOKEN_FILE_ENV, path_str, e)
+            return None
+        return token or None
+    return None
 
 
 class APIError(Exception):
@@ -99,7 +123,18 @@ class CairnMailClient:
             base_url: Base URL of the cairn-mail API
         """
         self.base_url = base_url.rstrip("/")
-        self._client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
+        self._token = _resolve_api_token()
+        headers = {"Authorization": f"Bearer {self._token}"} if self._token else {}
+        if not self._token:
+            logger.warning(
+                "No API token found (%s or %s). API-calling tools will fail until "
+                "one is configured.",
+                TOKEN_ENV,
+                TOKEN_FILE_ENV,
+            )
+        self._client = httpx.AsyncClient(
+            base_url=self.base_url, timeout=30.0, headers=headers
+        )
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -127,6 +162,12 @@ class CairnMailClient:
             APIConnectionError: If the API is unreachable
             APIError: If the API returns an error response
         """
+        if not self._token:
+            raise APIError(
+                f"No API token configured. Set {TOKEN_ENV} (or {TOKEN_FILE_ENV}) so "
+                "the MCP server can authenticate to the cairn-mail API.",
+                status_code=None,
+            )
         try:
             response = await self._client.request(
                 method=method,

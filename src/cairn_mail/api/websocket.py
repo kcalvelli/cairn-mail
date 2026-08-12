@@ -8,6 +8,8 @@ from typing import List, Set
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from . import auth
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -213,6 +215,18 @@ async def send_new_mail_notification(account_id: str):
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time updates."""
+    # Authenticate the handshake before accepting. Browsers can't set headers on
+    # a WebSocket connect, so the token rides in the query string. Reject with a
+    # policy-violation close (4401) before manager.connect() so an unauthenticated
+    # client never gets the welcome message or any broadcast.
+    expected = getattr(websocket.app.state, "api_token", None)
+    if not expected or not auth.token_matches(
+        f"Bearer {websocket.query_params.get('token', '')}", expected
+    ):
+        await websocket.close(code=4401)
+        logger.info("WebSocket handshake rejected: missing or invalid token")
+        return
+
     await manager.connect(websocket)
 
     try:

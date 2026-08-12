@@ -97,7 +97,7 @@ async def list_tags(
 
     except Exception as e:
         logger.error(f"Error listing tags: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/tags/available", response_model=AvailableTagsResponse)
@@ -157,7 +157,7 @@ async def list_available_tags(request: Request):
 
     except Exception as e:
         logger.error(f"Error listing available tags: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/stats", response_model=StatsResponse)
@@ -249,4 +249,4 @@ async def get_stats(
 
     except Exception as e:
         logger.error(f"Error getting stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

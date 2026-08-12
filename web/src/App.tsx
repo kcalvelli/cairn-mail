@@ -16,6 +16,7 @@ import { StatsPage } from './pages/StatsPage';
 import Compose from './pages/Compose';
 import DraftsPage from './pages/DraftsPage';
 import { ToastContainer } from './components/ToastContainer';
+import { TokenGate } from './components/TokenGate';
 import { useWebSocket } from './hooks/useWebSocket';
 
 declare const __APP_VERSION__: string;
@@ -84,6 +85,7 @@ function AppContent() {
         </Route>
       </Routes>
       <ToastContainer />
+      <TokenGate />
     </>
   );
 }

@@ -33,7 +33,7 @@ async def add_trusted_sender(request: Request, data: TrustedSenderCreate):
         return TrustedSenderResponse.model_validate(trusted)
     except Exception as e:
         logger.error(f"Error adding trusted sender: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/trusted-senders", response_model=TrustedSenderListResponse)
@@ -49,7 +49,7 @@ async def list_trusted_senders(request: Request, account_id: str):
         )
     except Exception as e:
         logger.error(f"Error listing trusted senders: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.delete("/trusted-senders/{sender_id}")
@@ -66,7 +66,7 @@ async def remove_trusted_sender(request: Request, sender_id: int):
         raise
     except Exception as e:
         logger.error(f"Error removing trusted sender: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/trusted-senders/check", response_model=TrustedSenderCheckResponse)
@@ -86,4 +86,4 @@ async def check_trusted_sender(request: Request, account_id: str, sender_email: 
         )
     except Exception as e:
         logger.error(f"Error checking trusted sender: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

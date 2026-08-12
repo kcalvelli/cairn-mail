@@ -169,7 +169,7 @@ async def list_message_attachments(message_id: str, request: Request):
 
     except Exception as e:
         logger.error(f"Failed to list attachments for message {message_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to list attachments: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to list attachments")
 
 
 @router.get("/{attachment_id}/download")
@@ -228,7 +228,7 @@ async def download_attachment(attachment_id: str, message_id: Optional[str] = No
 
         except Exception as e:
             logger.error(f"Failed to download attachment {attachment_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to download attachment: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to download attachment")
 
     else:
         # Download from database (draft attachment)

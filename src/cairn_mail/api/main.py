@@ -5,9 +5,9 @@ import sys
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from . import auth
 from ..config.loader import ConfigLoader
 from ..db.database import Database
 from ..ai_classifier import AIClassifier, AIConfig
@@ -37,18 +37,17 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS middleware - Allow localhost origins for development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+# Install security middleware (bearer auth + trusted-host + CORS) and the generic
+# 500 handler. See auth.install_security for ordering rationale. The token itself
+# is loaded at startup into app.state.api_token.
+auth.install_security(
+    app,
+    cors_origins=[
         "http://localhost:5173",  # Vite dev server
         "http://localhost:8080",  # Production
         "http://127.0.0.1:5173",
         "http://127.0.0.1:8080",
     ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 # Initialize database (shared with CLI)
@@ -256,6 +255,11 @@ def _on_idle_new_mail(account_id: str):
 async def startup_event():
     """Load configuration and sync to database on startup."""
     import asyncio
+
+    # Load the API token first. If this raises the lifespan startup fails and
+    # uvicorn exits non-zero — the service never serves the mailbox unprotected.
+    app.state.api_token = auth.load_token()
+    logger.info("API authentication token loaded")
 
     # Store event loop reference for use by IDLE threads
     app.state.event_loop = asyncio.get_running_loop()

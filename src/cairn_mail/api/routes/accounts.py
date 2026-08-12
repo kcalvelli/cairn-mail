@@ -48,7 +48,7 @@ async def list_accounts(
 
     except Exception as e:
         logger.error(f"Error listing accounts: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/accounts/{account_id}/stats", response_model=AccountStatsResponse)
@@ -89,7 +89,7 @@ async def get_account_stats(request: Request, account_id: str):
         raise
     except Exception as e:
         logger.error(f"Error getting stats for account {account_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/folders")
@@ -133,4 +133,4 @@ async def list_folders(request: Request):
 
     except Exception as e:
         logger.error(f"Error listing folders: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

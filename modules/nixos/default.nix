@@ -43,6 +43,30 @@ in {
       description = "Open firewall port for the web UI.";
     };
 
+    tokenFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = ''
+        Path to a file containing the shared bearer token that guards the API
+        and WebSocket. Point this at an agenix/sops secret. It is exposed to the
+        web service via systemd LoadCredential (not copied into the Nix store).
+        The API refuses to start if this is unset or the file is empty.
+      '';
+      example = "/run/agenix/cairn-mail-token";
+    };
+
+    allowedHosts = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = ''
+        Extra Host header values accepted by the API (loopback is always
+        allowed). Set this to your machine's Tailscale FQDN to harden against
+        DNS rebinding. Left empty, the API accepts any Host and logs a warning —
+        the bearer token remains the real security boundary either way.
+      '';
+      example = [ "edge.tailnet-1234.ts.net" ];
+    };
+
     # Tailscale Serve integration
     tailscaleServe = {
       enable = mkEnableOption "Tailscale Serve to expose cairn-mail across your tailnet";
@@ -118,6 +142,10 @@ in {
         assertion = cfg.tailscaleServe.enable -> config.services.tailscale.enable;
         message = "cairn-mail: tailscaleServe requires services.tailscale.enable = true";
       }
+      {
+        assertion = cfg.tokenFile != null;
+        message = "cairn-mail: services.cairn-mail.tokenFile must be set — the API will not start without an auth token.";
+      }
     ];
 
     # System service for the web UI
@@ -135,10 +163,16 @@ in {
         Restart = "on-failure";
         RestartSec = "5s";
 
+        # Auth token delivered as a systemd credential (kept out of $HOME and the
+        # Nix store); the app reads it via CAIRN_MAIL_TOKEN_FILE=%d/token.
+        LoadCredential = [ "token:${cfg.tokenFile}" ];
+
         # Read config from user's home
         Environment = [
           "PYTHONUNBUFFERED=1"
           "HOME=/home/${cfg.user}"
+          "CAIRN_MAIL_TOKEN_FILE=%d/token"
+          "CAIRN_MAIL_ALLOWED_HOSTS=${concatStringsSep "," cfg.allowedHosts}"
         ];
 
         # Hardening

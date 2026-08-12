@@ -65,7 +65,7 @@ async def list_available_actions(request: Request):
 
     except Exception as e:
         logger.error(f"Error listing actions: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/log", response_model=ActionLogResponse)
@@ -113,7 +113,7 @@ async def get_action_log(
 
     except Exception as e:
         logger.error(f"Error getting action log: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/retry/{log_id}")
@@ -159,4 +159,4 @@ async def retry_action(request: Request, log_id: str):
         raise
     except Exception as e:
         logger.error(f"Error retrying action: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

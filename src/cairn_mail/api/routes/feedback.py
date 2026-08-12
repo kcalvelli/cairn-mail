@@ -78,7 +78,7 @@ async def list_feedback(
 
     except Exception as e:
         logger.error(f"Error listing feedback: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/stats", response_model=FeedbackStatsResponse)
@@ -134,7 +134,7 @@ async def get_feedback_stats(
 
     except Exception as e:
         logger.error(f"Error getting feedback stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.delete("/{feedback_id}", response_model=FeedbackDeleteResponse)
@@ -173,7 +173,7 @@ async def delete_feedback(request: Request, feedback_id: int):
         raise
     except Exception as e:
         logger.error(f"Error deleting feedback: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.delete("", response_model=FeedbackDeleteResponse)
@@ -216,4 +216,4 @@ async def reset_all_feedback(
 
     except Exception as e:
         logger.error(f"Error resetting feedback: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
