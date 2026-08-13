@@ -246,6 +246,13 @@ class BaseEmailProvider(ABC):
     # the engine shouldn't branch on isinstance.
     uses_imap_folders: bool = False
 
+    # Set by fetch_messages() to report whether the last fetch returned its full
+    # window. False means the window was truncated at the max-results cap (or a
+    # folder failed to enumerate), so the sync engine must NOT advance the cursor
+    # past it — the dropped messages would otherwise never be re-observed. Default
+    # True so a provider that never truncates needs no special handling.
+    last_fetch_complete: bool = True
+
     def __init__(self, config: ProviderConfig):
         """Initialize provider with configuration.
 

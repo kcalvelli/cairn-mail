@@ -138,6 +138,11 @@ class GmailProvider(BaseEmailProvider):
         if not self.service:
             self.authenticate()
 
+        # Assume complete until a truncation path below proves otherwise. Gmail has
+        # no deep-reconcile backstop, so this flag is the only thing standing
+        # between a truncated window and permanent, silent loss.
+        self.last_fetch_complete = True
+
         try:
             messages = []
 
@@ -149,15 +154,41 @@ class GmailProvider(BaseEmailProvider):
                 date_str = since.strftime("%Y/%m/%d")
                 query += f" after:{date_str}"
 
-            # Fetch message list
-            results = (
-                self.service.users()
-                .messages()
-                .list(userId="me", q=query, maxResults=max_results)
-                .execute()
-            )
+            # Page through the full window rather than taking only the first page.
+            # Gmail's list() returns one page plus a nextPageToken; ignoring the
+            # token silently dropped everything past the first page. Accumulate up
+            # to the caller's cap; if a token is still outstanding at the cap, the
+            # window was truncated and the cursor must hold.
+            message_items = []
+            page_token = None
+            while True:
+                results = (
+                    self.service.users()
+                    .messages()
+                    .list(
+                        userId="me",
+                        q=query,
+                        maxResults=max_results,
+                        pageToken=page_token,
+                    )
+                    .execute()
+                )
+                message_items.extend(results.get("messages", []))
+                page_token = results.get("nextPageToken")
+                if not page_token:
+                    break
+                if len(message_items) >= max_results:
+                    # More available than we'll ingest this pass — take the newest
+                    # cap and defer the rest to a later sync (cursor held).
+                    logger.warning(
+                        "Gmail fetch truncated at max_results=%d with more pages "
+                        "available; deferring older messages to a later sync",
+                        max_results,
+                    )
+                    message_items = message_items[:max_results]
+                    self.last_fetch_complete = False
+                    break
 
-            message_items = results.get("messages", [])
             logger.info(f"Fetched {len(message_items)} messages from Gmail")
 
             # Fetch full message details

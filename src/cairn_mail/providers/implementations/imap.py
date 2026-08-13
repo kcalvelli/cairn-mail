@@ -483,6 +483,10 @@ class IMAPProvider(BaseEmailProvider):
         if not self.connection:
             raise RuntimeError("Not authenticated. Call authenticate() first.")
 
+        # Assume a complete window; the truncation/failure paths below (and in
+        # _fetch_from_folder) flip this to False so the sync engine holds the cursor.
+        self.last_fetch_complete = True
+
         # If specific folder requested, fetch from that folder only
         if folder:
             return self._fetch_from_folder(folder, since, max_results)
@@ -517,12 +521,16 @@ class IMAPProvider(BaseEmailProvider):
                 logger.info(f"Fetched {len(messages)} messages from {folder_name}")
             except Exception as e:
                 logger.error(f"Failed to fetch from folder {folder_name}: {e}")
+                # A folder we couldn't enumerate is a hole in the window — don't
+                # let the cursor advance past mail we never saw.
+                self.last_fetch_complete = False
                 continue
 
         # Sort by date (most recent first) and limit total results
         all_messages.sort(key=lambda m: m.date, reverse=True)
         if len(all_messages) > max_results:
             all_messages = all_messages[:max_results]
+            self.last_fetch_complete = False
 
         logger.info(f"Total fetched: {len(all_messages)} messages across {len(folders_to_fetch)} folders")
         return all_messages
@@ -567,15 +575,18 @@ class IMAPProvider(BaseEmailProvider):
 
         msg_ids = msg_ids_data[0].split()
 
-        # Limit results (take most recent). The incremental sync no longer
-        # purges, so a truncated fetch just means older mail waits for the
-        # next round / deep reconciliation — it can't cause data loss.
+        # Limit results (take most recent). Truncation drops the OLDEST UIDs, so
+        # it's only safe if the sync cursor doesn't advance past them: we flag the
+        # window incomplete (the engine then holds last_sync) and, for IMAP, the
+        # nightly deep reconciliation also drains the backlog. Both are required —
+        # a truncated window is NOT loss-free on its own.
         if len(msg_ids) > max_results:
             logger.warning(
                 f"Truncating fetch for {folder}: {len(msg_ids)} UIDs available, "
                 f"max_results={max_results}; older messages deferred to a later sync"
             )
             msg_ids = msg_ids[-max_results:]
+            self.last_fetch_complete = False
 
         logger.debug(f"Found {len(msg_ids)} messages in {folder}")
 

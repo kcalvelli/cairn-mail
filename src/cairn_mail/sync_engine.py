@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Set
 
 from .action_agent import ActionAgent
@@ -18,6 +18,14 @@ logger = logging.getLogger(__name__)
 # is almost certainly an enumeration failure (see the historical-archive
 # purge incident), so deep reconciliation refuses to purge that folder.
 EMPTY_FOLDER_PURGE_THRESHOLD = 5
+
+# Both providers build a date-granular query from the sync cursor (IMAP
+# `SINCE DD-Mon-YYYY` vs server-local INTERNALDATE, Gmail `after:YYYY/MM/DD` vs
+# account-local time). A cursor stored in UTC can therefore exclude messages that
+# arrived near a day boundary. Widen the fetch window backward by this slack so
+# those messages stay inside it; the store step dedupes on id, so the overlap is
+# harmless. A full day comfortably covers any timezone offset.
+SYNC_WINDOW_SLACK = timedelta(days=1)
 
 
 @dataclass
@@ -186,7 +194,11 @@ class SyncEngine:
             last_sync = self.db.get_last_sync_time(self.account_id)
             logger.info(f"Last sync: {last_sync}")
 
-            messages = self.provider.fetch_messages(since=last_sync, max_results=max_messages)
+            # Widen the window backward by the slack margin so day-boundary /
+            # timezone-skewed messages aren't excluded. Leave None (first/full
+            # sync) untouched.
+            fetch_since = last_sync - SYNC_WINDOW_SLACK if last_sync else None
+            messages = self.provider.fetch_messages(since=fetch_since, max_results=max_messages)
             messages_fetched = len(messages)
 
             if not messages:
@@ -326,8 +338,24 @@ class SyncEngine:
                     logger.error(error_msg)
                     errors.append(error_msg)
 
-            # 7. Update last sync timestamp
-            self.db.update_last_sync(self.account_id, datetime.now(timezone.utc))
+            # 7. Update last sync timestamp — but ONLY over work we durably
+            # completed. If the fetch was truncated (older messages dropped to
+            # satisfy the cap) or any store/classify failed, advancing the cursor
+            # would leapfrog mail we never ingested. Providers without deep
+            # reconciliation (Gmail) never recover from that, so we hold instead.
+            # Advance to start_time (captured before the fetch), not now(), so mail
+            # that arrived mid-sync isn't skipped by the next window.
+            fetch_complete = getattr(self.provider, "last_fetch_complete", True)
+            if fetch_complete and not errors:
+                self.db.update_last_sync(self.account_id, start_time)
+            else:
+                logger.warning(
+                    "Holding last_sync for account %s: fetch_complete=%s, errors=%d; "
+                    "this window will be re-observed on the next sync",
+                    self.account_id,
+                    fetch_complete,
+                    len(errors),
+                )
 
             # Maintain the adaptive-backoff counter here so every caller
             # (CLI timer, web UI trigger, future schedulers) updates it the
