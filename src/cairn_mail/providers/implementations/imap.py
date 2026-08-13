@@ -404,9 +404,14 @@ class IMAPProvider(BaseEmailProvider):
         """
         supported = False
         try:
-            typ, perm = self.connection.response("PERMANENTFLAGS")
-            if typ == "OK" and perm and perm[0]:
-                flags = perm[0].decode("utf-8", errors="ignore")
+            # response() echoes the code back as the first tuple element
+            # (here "PERMANENTFLAGS"), NOT the IMAP status — the payload is
+            # what matters. Data is a list; entries are bytes in Py3 imaplib.
+            _, perm = self.connection.response("PERMANENTFLAGS")
+            if perm and perm[0]:
+                flags = perm[0]
+                if isinstance(flags, bytes):
+                    flags = flags.decode("utf-8", errors="ignore")
                 supported = "\\*" in flags
         except Exception as e:
             # Missing/garbled PERMANENTFLAGS → treat as unsupported (safe).

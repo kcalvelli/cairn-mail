@@ -29,7 +29,10 @@ def make_provider(permanentflags=b"(\\Answered \\Flagged \\Deleted \\Seen \\*)")
     provider = IMAPProvider(config)
     conn = MagicMock()
     conn.select.return_value = ("OK", [b"3"])
-    conn.response.return_value = ("OK", [permanentflags])
+    # imaplib's response() echoes the requested code back as the first tuple
+    # element ("PERMANENTFLAGS"), never "OK" — mirror that exactly so the mock
+    # can't paper over a wrong assumption in the detection code.
+    conn.response.return_value = ("PERMANENTFLAGS", [permanentflags])
     conn.uid.return_value = ("OK", [b"1 (UID 42)"])
     provider.connection = conn
     return provider, conn
@@ -49,7 +52,7 @@ def test_permanentflags_without_star_marks_unsupported():
 
 def test_missing_permanentflags_marks_unsupported():
     provider, conn = make_provider()
-    conn.response.return_value = ("OK", [None])
+    conn.response.return_value = ("PERMANENTFLAGS", [None])
     provider._select_folder("INBOX")
     assert provider._keyword_support["INBOX"] is False
 
