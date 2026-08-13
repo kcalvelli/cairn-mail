@@ -1284,11 +1284,19 @@ class IMAPProvider(BaseEmailProvider):
 
         return False
 
-    def send_message(self, mime_message: bytes, thread_id: Optional[str] = None) -> str:
+    def send_message(
+        self,
+        mime_message: bytes,
+        envelope_recipients: List[str],
+        thread_id: Optional[str] = None,
+    ) -> str:
         """Send a message via SMTP and store in Sent folder.
 
         Args:
             mime_message: RFC822 MIME message as bytes
+            envelope_recipients: Full delivery envelope (To + Cc + Bcc). Used
+                directly as the SMTP RCPT TO list — Bcc is delivered here, not via
+                a message header, so it stays hidden from other recipients.
             thread_id: Optional thread ID (not used for IMAP)
 
         Returns:
@@ -1320,15 +1328,12 @@ class IMAPProvider(BaseEmailProvider):
             use_tls=self.config.smtp_tls,
         )
 
-        # Parse MIME message to get From and To addresses
+        # Parse MIME message for the From address; the delivery envelope is passed
+        # in explicitly (to + cc + bcc). We do NOT re-derive recipients from the
+        # headers — the Bcc header isn't in the body, so that would drop every Bcc.
         parsed_message = email.message_from_bytes(mime_message)
         from_addr = parsed_message.get("From", self.config.email)
-        to_addrs = []
-
-        # Extract all recipients (To, Cc, Bcc)
-        for header in ["To", "Cc", "Bcc"]:
-            if parsed_message.get(header):
-                to_addrs.extend([addr.strip() for addr in parsed_message.get(header).split(",")])
+        to_addrs = list(envelope_recipients)
 
         # Send via SMTP
         logger.info(f"Sending message via SMTP to {len(to_addrs)} recipients")

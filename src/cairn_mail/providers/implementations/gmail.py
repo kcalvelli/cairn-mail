@@ -600,11 +600,55 @@ class GmailProvider(BaseEmailProvider):
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
-    def send_message(self, mime_message: bytes, thread_id: Optional[str] = None) -> str:
+    @staticmethod
+    def _inject_bcc_header(mime_message: bytes, envelope_recipients: List[str]) -> bytes:
+        """Add a Bcc header for envelope recipients not already in To/Cc.
+
+        Returns the message unchanged (same bytes) when there are no Bcc-only
+        recipients, so ordinary sends pay no re-serialization cost.
+        """
+        import email as email_module
+
+        parsed = email_module.message_from_bytes(mime_message)
+
+        def addrs(header: str) -> Set[str]:
+            values = parsed.get_all(header, [])
+            return {addr.lower() for _, addr in email.utils.getaddresses(values) if addr}
+
+        visible = addrs("To") | addrs("Cc") | addrs("Bcc")
+
+        bcc_only = []
+        seen = set(visible)
+        for _, addr in email.utils.getaddresses(list(envelope_recipients)):
+            if addr and addr.lower() not in seen:
+                bcc_only.append(addr)
+                seen.add(addr.lower())
+
+        if not bcc_only:
+            return mime_message
+
+        existing_bcc = parsed.get_all("Bcc", [])
+        del parsed["Bcc"]
+        parsed["Bcc"] = ", ".join(existing_bcc + bcc_only) if existing_bcc else ", ".join(bcc_only)
+        return parsed.as_bytes()
+
+    def send_message(
+        self,
+        mime_message: bytes,
+        envelope_recipients: List[str],
+        thread_id: Optional[str] = None,
+    ) -> str:
         """Send a message via Gmail API.
+
+        Gmail derives recipients from the message headers (there is no separate
+        envelope parameter), so Bcc recipients must ride in the message. We add a
+        Bcc header for any envelope recipient not already in To/Cc; Gmail delivers
+        to it and strips the header before the message leaves Google, so recipient
+        copies stay clean.
 
         Args:
             mime_message: RFC822 MIME message as bytes
+            envelope_recipients: Full delivery envelope (To + Cc + Bcc)
             thread_id: Optional thread ID for replies
 
         Returns:
@@ -619,6 +663,10 @@ class GmailProvider(BaseEmailProvider):
             self.authenticate()
 
         try:
+            # Fold Bcc recipients into the message so Gmail delivers to them. Any
+            # envelope address not already visible in To/Cc is a Bcc recipient.
+            mime_message = self._inject_bcc_header(mime_message, envelope_recipients)
+
             # Validate size (Gmail limit is 25MB)
             size_mb = len(mime_message) / (1024 * 1024)
             if size_mb > 25:

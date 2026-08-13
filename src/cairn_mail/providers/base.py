@@ -160,11 +160,20 @@ class EmailProvider(Protocol):
         """
         ...
 
-    def send_message(self, mime_message: bytes, thread_id: Optional[str] = None) -> str:
+    def send_message(
+        self,
+        mime_message: bytes,
+        envelope_recipients: List[str],
+        thread_id: Optional[str] = None,
+    ) -> str:
         """Send a message via the provider.
 
         Args:
             mime_message: RFC822 MIME message as bytes
+            envelope_recipients: Full delivery envelope (To + Cc + Bcc) as bare
+                addresses. This is who the message is actually delivered to; it is
+                NOT re-derived from the message headers (Bcc is intentionally absent
+                from the body to keep it hidden from other recipients).
             thread_id: Optional thread ID for replies
 
         Returns:
@@ -404,11 +413,20 @@ class BaseEmailProvider(ABC):
         pass
 
     @abstractmethod
-    def send_message(self, mime_message: bytes, thread_id: Optional[str] = None) -> str:
+    def send_message(
+        self,
+        mime_message: bytes,
+        envelope_recipients: List[str],
+        thread_id: Optional[str] = None,
+    ) -> str:
         """Send a message via the provider.
 
         Args:
             mime_message: RFC822 MIME message as bytes
+            envelope_recipients: Full delivery envelope (To + Cc + Bcc) as bare
+                addresses. This is who the message is actually delivered to; it is
+                NOT re-derived from the message headers (Bcc is intentionally absent
+                from the body to keep it hidden from other recipients).
             thread_id: Optional thread ID for replies
 
         Returns:

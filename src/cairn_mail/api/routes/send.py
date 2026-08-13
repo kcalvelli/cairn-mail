@@ -1,6 +1,7 @@
 """API routes for sending email messages."""
 
 import logging
+from email.utils import getaddresses
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -11,6 +12,19 @@ from ...providers.factory import ProviderFactory
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/send", tags=["send"])
+
+
+def build_envelope_recipients(to_emails, cc_emails, bcc_emails) -> list[str]:
+    """Flatten a draft's To/Cc/Bcc fields into a bare-address delivery envelope.
+
+    Uses email.utils.getaddresses so a display name containing a comma
+    (``"Last, First" <a@b>``) resolves to a single recipient rather than being
+    naively split on the comma. Any of the arguments may be None.
+    """
+    raw_recipients = list(to_emails or [])
+    raw_recipients += list(cc_emails or [])
+    raw_recipients += list(bcc_emails or [])
+    return [addr for _, addr in getaddresses(raw_recipients) if addr]
 
 
 class SendRequest(BaseModel):
@@ -79,6 +93,19 @@ async def send_message(send_request: SendRequest, request: Request):
             from_email=account.email,
         )
 
+        # Build the delivery envelope from the draft's structured recipients, not
+        # from the message headers — the Bcc header is intentionally absent from the
+        # body, so re-parsing headers would silently drop every Bcc recipient.
+        envelope_recipients = build_envelope_recipients(
+            draft.to_emails, draft.cc_emails, draft.bcc_emails
+        )
+
+        if not envelope_recipients:
+            raise HTTPException(
+                status_code=400,
+                detail="Draft has no recipients — nothing to send to.",
+            )
+
         # Log final message size
         message_bytes = mime_message.as_bytes()
         logger.info(f"Built MIME message: {len(message_bytes)} bytes total")
@@ -98,6 +125,7 @@ async def send_message(send_request: SendRequest, request: Request):
 
         message_id = provider.send_message(
             mime_message=message_bytes,
+            envelope_recipients=envelope_recipients,
             thread_id=draft.thread_id,
         )
 

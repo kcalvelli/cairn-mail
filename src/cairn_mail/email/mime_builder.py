@@ -173,8 +173,11 @@ class MIMEBuilder:
         if draft.cc_emails:
             msg["Cc"] = ", ".join(draft.cc_emails)
 
-        # Bcc header (note: omitted from final message, handled separately in SMTP)
-        # BCC recipients are added via RCPT TO in SMTP, not in headers
+        # Bcc is deliberately NOT written into the message body — that keeps it
+        # hidden from other recipients. Bcc delivery is driven by the explicit
+        # envelope_recipients list passed to provider.send_message: SMTP delivers
+        # to it via RCPT TO, and the Gmail provider re-adds a strip-on-send Bcc
+        # header from that envelope.
 
         # Subject
         msg["Subject"] = draft.subject
