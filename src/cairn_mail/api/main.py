@@ -133,8 +133,49 @@ if not static_dir.exists():
     # Try development location
     static_dir = Path(__file__).parent.parent.parent.parent / "web" / "dist"
 
+
+class CachedStaticFiles(StaticFiles):
+    """StaticFiles with a PWA-correct cache policy.
+
+    Every file in the Nix store has an mtime of 1970, and Starlette's
+    StaticFiles sends no Cache-Control at all. That combination makes
+    browsers fall back to *heuristic* freshness (~10% of the file's age),
+    which for a 1970 timestamp is years — so the app shell gets pinned in
+    the HTTP cache and only a hard refresh ever reaches the server again.
+
+    Fix: the shell (index.html, the service worker, the manifest) must
+    always revalidate, while Vite's content-hashed assets can cache forever
+    since a new build gets a new filename.
+    """
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        # `path` is relative to the mount; "" and "." resolve to index.html.
+        name = path.rsplit("/", 1)[-1].lower()
+        if path.startswith("assets/"):
+            # Content-hashed by Vite — the URL changes when the bytes do.
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif (
+            path in ("", ".")
+            or name.endswith(".html")
+            or name in ("sw.js", "registersw.js")
+            or name.endswith(".webmanifest")
+        ):
+            # The shell decides which assets to load — never serve it stale.
+            # Starlette derives its ETag/Last-Modified from (mtime, size), but
+            # every Nix-store file has an mtime of 1970 and Vite's content
+            # hashes are fixed-length, so a rebuilt shell of the same byte
+            # length keeps the same validator and revalidation returns a bogus
+            # 304. Drop the validators so the browser always refetches the shell.
+            response.headers["Cache-Control"] = "no-cache"
+            for validator in ("etag", "last-modified"):
+                if validator in response.headers:
+                    del response.headers[validator]
+        return response
+
+
 if static_dir.exists():
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+    app.mount("/", CachedStaticFiles(directory=str(static_dir), html=True), name="static")
     logger.info(f"Serving static files from {static_dir}")
 else:
     logger.warning(f"Static files not found at {static_dir}. Web UI will not be available.")
