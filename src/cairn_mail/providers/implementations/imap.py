@@ -44,7 +44,10 @@ class IMAPProvider(BaseEmailProvider):
     def __init__(self, config: IMAPConfig):
         super().__init__(config)
         self.connection: Optional[imaplib.IMAP4_SSL] = None
-        self._supports_keywords: Optional[bool] = None
+        # Custom-keyword support is a per-mailbox property (PERMANENTFLAGS \*),
+        # not a server capability — cache it per folder as we select folders.
+        self._keyword_support: Dict[str, bool] = {}
+        self._keyword_unsupported_logged: set = set()
         self._current_folder: Optional[str] = None
         self._folder_mapping: Optional[Dict[str, str]] = None  # Cache discovered folder mapping
         self._using_pool: bool = False  # Track if we got connection from pool
@@ -78,16 +81,6 @@ class IMAPProvider(BaseEmailProvider):
             create_fn=self._create_connection,
         )
         self._using_pool = True
-
-        # Check for KEYWORD capability (only on first connect or reconnect)
-        if self._supports_keywords is None:
-            typ, capabilities = self.connection.capability()
-            if typ == "OK":
-                capabilities_str = capabilities[0].decode("utf-8", errors="ignore")
-                self._supports_keywords = "KEYWORD" in capabilities_str
-                logger.info(
-                    f"IMAP KEYWORD extension: {'supported' if self._supports_keywords else 'not supported'}"
-                )
 
     def release(self) -> None:
         """Release connection back to pool (keep alive for reuse)."""
@@ -391,12 +384,35 @@ class IMAPProvider(BaseEmailProvider):
                     logger.error(f"Failed to select folder: {folder}")
                     return False
                 self._current_folder = folder
+                self._detect_keyword_support(folder)
                 logger.debug(f"Selected folder: {folder}")
             return True
 
         except Exception as e:
             logger.error(f"Error selecting folder {folder}: {e}")
             return False
+
+    def _detect_keyword_support(self, folder: str) -> None:
+        """
+        Record whether the just-selected folder accepts custom keywords.
+
+        Custom-keyword support is advertised per-mailbox in the PERMANENTFLAGS
+        untagged response of a SELECT, by the presence of the special ``\\*``
+        flag — NOT by any token in the server's CAPABILITY response. imaplib
+        parks that line in its response cache; select()'s own return value is
+        the message count, so we read it back explicitly here.
+        """
+        supported = False
+        try:
+            typ, perm = self.connection.response("PERMANENTFLAGS")
+            if typ == "OK" and perm and perm[0]:
+                flags = perm[0].decode("utf-8", errors="ignore")
+                supported = "\\*" in flags
+        except Exception as e:
+            # Missing/garbled PERMANENTFLAGS → treat as unsupported (safe).
+            logger.debug(f"Could not read PERMANENTFLAGS for {folder}: {e}")
+
+        self._keyword_support[folder] = supported
 
     def _normalize_folder_name(self, imap_folder: str) -> str:
         """
@@ -942,12 +958,6 @@ class IMAPProvider(BaseEmailProvider):
             add_labels: Labels to add
             remove_labels: Labels to remove
         """
-        if not self._supports_keywords:
-            logger.debug(
-                "IMAP KEYWORD extension not supported - running in read-only mode"
-            )
-            return
-
         if not self.connection:
             raise RuntimeError("Not authenticated")
 
@@ -955,16 +965,31 @@ class IMAPProvider(BaseEmailProvider):
         folder, uid = self._parse_message_id(message_id)
 
         try:
-            # Select the correct folder
+            # Select the correct folder (also detects keyword support for it)
             if not self._select_folder(folder):
                 raise RuntimeError(f"Failed to select folder {folder}")
+
+            # Keyword support is per-mailbox; skip write-back if this folder
+            # doesn't accept custom keywords, but log it only once per folder.
+            if not self._keyword_support.get(folder):
+                if folder not in self._keyword_unsupported_logged:
+                    logger.info(
+                        f"Folder {folder} does not accept custom keywords "
+                        f"(no \\* in PERMANENTFLAGS) - skipping label write-back"
+                    )
+                    self._keyword_unsupported_logged.add(folder)
+                return
 
             # Add keywords using UID
             if add_labels:
                 keywords = " ".join(
                     f"{self.config.keyword_prefix}{label}" for label in add_labels
                 )
-                self.connection.uid("STORE", uid, "+FLAGS", f"({keywords})")
+                typ, _ = self.connection.uid("STORE", uid, "+FLAGS", f"({keywords})")
+                if typ != "OK":
+                    raise RuntimeError(
+                        f"UID STORE +FLAGS failed for UID {uid} in {folder}: {typ}"
+                    )
                 logger.debug(f"Added keywords to message UID {uid} in {folder}: {keywords}")
 
             # Remove keywords using UID
@@ -972,7 +997,11 @@ class IMAPProvider(BaseEmailProvider):
                 keywords = " ".join(
                     f"{self.config.keyword_prefix}{label}" for label in remove_labels
                 )
-                self.connection.uid("STORE", uid, "-FLAGS", f"({keywords})")
+                typ, _ = self.connection.uid("STORE", uid, "-FLAGS", f"({keywords})")
+                if typ != "OK":
+                    raise RuntimeError(
+                        f"UID STORE -FLAGS failed for UID {uid} in {folder}: {typ}"
+                    )
                 logger.debug(f"Removed keywords from message UID {uid} in {folder}: {keywords}")
 
         except Exception as e:
