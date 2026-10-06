@@ -98,6 +98,8 @@ export default function Compose() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loadingDraft, setLoadingDraft] = useState(!!existingDraftId);
+  const [forwardBodyLoaded, setForwardBodyLoaded] = useState(false);
+  const forwardAttachmentsCopiedRef = useRef(false);
 
   // Auto-save and dirty tracking state
   const [savingDraft, setSavingDraft] = useState(false);
@@ -285,8 +287,10 @@ export default function Compose() {
 
         editor.commands.setContent(`<p><br></p>${forwardHeader}${originalBody}`);
         editor.commands.focus('start');
+        setForwardBodyLoaded(true);
       } catch (err) {
         console.error('Failed to load original message for forward:', err);
+        setError('Could not load the message you are forwarding');
       }
     };
 
@@ -372,6 +376,36 @@ export default function Compose() {
   }, [selectedAccountId, editor, to, subject, cc, bcc, showCc, showBcc, threadId, replyTo, draftId, getCurrentContentHash, sourceMode, sourceHtml]);
 
   // Explicit save draft handler
+  // Forwarding: once the body is in place, park it in a draft so the original
+  // message's attachments have somewhere to land.
+  useEffect(() => {
+    if (!forwardFrom || !forwardBodyLoaded || !selectedAccountId) return;
+    if (forwardAttachmentsCopiedRef.current) return;
+    forwardAttachmentsCopiedRef.current = true;
+
+    const copyForwardAttachments = async () => {
+      const savedDraftId = await saveDraft(false);
+      if (!savedDraftId) {
+        setError('Could not create a draft for the forwarded attachments');
+        return;
+      }
+      setUploading(true);
+      try {
+        const response = await axios.post(
+          `/api/attachments/drafts/${savedDraftId}/forward-from/${forwardFrom}`
+        );
+        setAttachments(prev => [...prev, ...response.data]);
+      } catch (err) {
+        console.error('Failed to copy forwarded attachments:', err);
+        setError('Forwarded the text, but the attachments did not make the trip');
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    copyForwardAttachments();
+  }, [forwardFrom, forwardBodyLoaded, selectedAccountId, saveDraft]);
+
   const handleSaveDraft = async () => {
     const saved = await saveDraft(true);
     if (saved) {
@@ -426,12 +460,10 @@ export default function Compose() {
     if (!files || files.length === 0) return;
 
     // Ensure draft is created first
-    if (!draftId) {
-      await saveDraft();
-      if (!draftId) {
-        setError('Please fill in recipient and subject before adding attachments');
-        return;
-      }
+    const targetDraftId = draftId || (await saveDraft());
+    if (!targetDraftId) {
+      setError('Please fill in recipient and subject before adding attachments');
+      return;
     }
 
     setUploading(true);
@@ -443,7 +475,7 @@ export default function Compose() {
         formData.append('file', file);
 
         const response = await axios.post(
-          `/api/attachments/drafts/${draftId}/attachments`,
+          `/api/attachments/drafts/${targetDraftId}/attachments`,
           formData,
           {
             headers: {

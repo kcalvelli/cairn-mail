@@ -282,7 +282,9 @@ export function MessageDetail({
   const handleForward = () => {
     if (message) {
       const params = new URLSearchParams({
+        forward_from: message.id,
         subject: message.subject.startsWith('Fwd: ') ? message.subject : `Fwd: ${message.subject}`,
+        account_id: message.account_id,
       });
       navigate(`/compose?${params.toString()}`);
     }

@@ -78,6 +78,77 @@ async def upload_attachment(
     )
 
 
+@router.post(
+    "/drafts/{draft_id}/forward-from/{message_id}",
+    response_model=List[AttachmentResponse],
+)
+async def copy_forwarded_attachments(draft_id: str, message_id: str, request: Request):
+    """Copy every attachment on a received message onto a draft.
+
+    This is what makes Forward actually forward. Inline images ride along too:
+    the compose editor strips <img> tags, so dropping them would silently lose
+    content. Anything already on the draft (same filename + size) is skipped,
+    so a double-fire from the UI doesn't double the payload.
+    """
+    db = request.app.state.db
+
+    draft = db.get_draft(draft_id)
+    if not draft:
+        raise HTTPException(status_code=404, detail=f"Draft {draft_id} not found")
+
+    message = db.get_message(message_id)
+    if not message:
+        raise HTTPException(status_code=404, detail=f"Message {message_id} not found")
+
+    account = db.get_account(message.account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail=f"Account {message.account_id} not found")
+
+    existing = {(a.filename, a.size) for a in db.list_attachments(draft_id=draft_id)}
+
+    try:
+        provider = ProviderFactory.create_from_account(account)
+        provider.authenticate()
+        source_attachments = provider.list_attachments(message_id)
+
+        copied = []
+        for att in source_attachments:
+            data = provider.get_attachment(message_id, att["id"])
+            if (att["filename"], len(data)) in existing:
+                continue
+            copied.append(
+                db.add_attachment(
+                    attachment_id=str(uuid.uuid4()),
+                    filename=att["filename"],
+                    content_type=att.get("content_type") or "application/octet-stream",
+                    size=len(data),
+                    data=data,
+                    draft_id=draft_id,
+                )
+            )
+    except Exception as e:
+        logger.error(
+            f"Failed to copy attachments from {message_id} to draft {draft_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail="Failed to copy forwarded attachments")
+
+    logger.info(f"Copied {len(copied)} attachment(s) from {message_id} to draft {draft_id}")
+
+    return [
+        AttachmentResponse(
+            id=att.id,
+            filename=att.filename,
+            content_type=att.content_type,
+            size=att.size,
+            draft_id=att.draft_id,
+            message_id=att.message_id,
+            created_at=att.created_at.isoformat(),
+        )
+        for att in copied
+    ]
+
+
 @router.get("/drafts/{draft_id}/attachments", response_model=List[AttachmentResponse])
 async def list_draft_attachments(draft_id: str, request: Request):
     """List all attachments for a draft.
