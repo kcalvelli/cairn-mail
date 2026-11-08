@@ -7,7 +7,7 @@ to AI assistants.
 import logging
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from .client import APIConnectionError, APIError, CairnMailClient
 from .utils import (
@@ -19,16 +19,16 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-def register_tools(mcp: FastMCP, client: CairnMailClient) -> None:
+def register_tools(mcp: MCPServer, client: CairnMailClient) -> None:
     """Register all MCP tools with the server.
 
     Args:
-        mcp: FastMCP server instance
+        mcp: MCPServer server instance
         client: CairnMailClient instance for API calls
     """
 
     @mcp.tool()
-    async def list_accounts() -> list[dict[str, Any]]:
+    async def list_accounts() -> list[dict[str, Any]] | dict[str, Any]:
         """List all configured email accounts.
 
         Returns account names, emails, and providers.

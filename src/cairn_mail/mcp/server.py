@@ -6,7 +6,7 @@ as tools for AI assistants.
 
 import logging
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from .client import CairnMailClient
 from .tools import register_tools
@@ -17,17 +17,17 @@ logger = logging.getLogger(__name__)
 DEFAULT_API_URL = "http://localhost:8080"
 
 
-def create_server(api_url: str = DEFAULT_API_URL) -> FastMCP:
+def create_server(api_url: str = DEFAULT_API_URL) -> MCPServer:
     """Create and configure the MCP server.
 
     Args:
         api_url: Base URL of the cairn-mail API
 
     Returns:
-        Configured FastMCP server instance
+        Configured MCPServer instance
     """
     # Create the MCP server
-    mcp = FastMCP("cairn-mail")
+    mcp = MCPServer("cairn-mail")
 
     # Create API client
     client = CairnMailClient(base_url=api_url)
