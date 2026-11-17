@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException
 
 from . import auth
 from ..config.loader import ConfigLoader
@@ -149,7 +150,18 @@ class CachedStaticFiles(StaticFiles):
     """
 
     async def get_response(self, path, scope):
-        response = await super().get_response(path, scope)
+        try:
+            response = await super().get_response(path, scope)
+        except HTTPException as e:
+            # Client-side routes (/messages/<id>, /compose, ...) aren't files.
+            # Hand them the shell and let React Router sort it out — otherwise
+            # a push-notification tap on a cold PWA lands on {"detail":"Not Found"}.
+            # Missing assets (anything with an extension) and unknown /api paths
+            # still 404 for real.
+            name = path.rsplit("/", 1)[-1]
+            if e.status_code != 404 or path.startswith(("api/", "ws")) or "." in name:
+                raise
+            return await self.get_response("index.html", scope)
         # `path` is relative to the mount; "" and "." resolve to index.html.
         name = path.rsplit("/", 1)[-1].lower()
         if path.startswith("assets/"):
