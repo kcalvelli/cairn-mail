@@ -56,6 +56,7 @@ import {
 import { useAvailableTags, useActionTagNames } from '../hooks/useStats';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useAppStore } from '../store/appStore';
+import { replyUrl, forwardUrl } from '../utils/composeUrl';
 
 interface Attachment {
   id: string;
@@ -266,43 +267,19 @@ export function MessageDetail({
 
   const handleReply = () => {
     if (message) {
-      const params = new URLSearchParams({
-        reply_to: message.id,
-        to: message.from_email,
-        subject: message.subject.startsWith('Re: ') ? message.subject : `Re: ${message.subject}`,
-        thread_id: message.thread_id || '',
-        account_id: message.account_id,
-        quote_from: message.from_email,
-        quote_date: message.date,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(replyUrl(message));
     }
   };
 
   const handleForward = () => {
     if (message) {
-      const params = new URLSearchParams({
-        forward_from: message.id,
-        subject: message.subject.startsWith('Fwd: ') ? message.subject : `Fwd: ${message.subject}`,
-        account_id: message.account_id,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(forwardUrl(message));
     }
   };
 
   const handleSelectSmartReply = (replyText: string) => {
     if (message) {
-      const params = new URLSearchParams({
-        reply_to: message.id,
-        to: message.from_email,
-        subject: message.subject.startsWith('Re: ') ? message.subject : `Re: ${message.subject}`,
-        thread_id: message.thread_id || '',
-        account_id: message.account_id,
-        quote_from: message.from_email,
-        quote_date: message.date,
-        body: replyText,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(replyUrl(message, replyText));
     }
   };
 

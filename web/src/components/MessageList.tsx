@@ -38,6 +38,7 @@ import {
 import { useAppStore } from '../store/appStore';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../hooks/useToast';
+import { replyUrl } from '../utils/composeUrl';
 
 export function MessageList() {
   const navigate = useNavigate();
@@ -364,7 +365,8 @@ export function MessageList() {
 
   // Callbacks for ReadingPane keyboard navigation
   const handleReply = (messageId: string) => {
-    navigate(`/compose?reply=${messageId}`);
+    const message = data?.messages.find((m) => m.id === messageId);
+    if (message) navigate(replyUrl(message));
   };
 
   const handleDelete = (messageId: string) => {

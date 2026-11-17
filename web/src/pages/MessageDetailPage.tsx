@@ -67,6 +67,7 @@ import { SenderAvatar, extractSenderName } from '../components/SenderAvatar';
 import { QuotedText, processHtmlQuotes } from '../components/QuotedText';
 import { EmailContent } from '../components/EmailContent';
 import { ThreadView } from '../components/ThreadView';
+import { replyUrl, forwardUrl } from '../utils/composeUrl';
 
 export function MessageDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -96,16 +97,7 @@ export function MessageDetailPage() {
   // Keyboard navigation callbacks
   const handleKeyboardReply = useCallback((_messageId: string) => {
     if (message) {
-      const params = new URLSearchParams({
-        reply_to: message.id,
-        to: message.from_email,
-        subject: message.subject.startsWith('Re: ') ? message.subject : `Re: ${message.subject}`,
-        thread_id: message.thread_id || '',
-        account_id: message.account_id,
-        quote_from: message.from_email,
-        quote_date: message.date,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(replyUrl(message));
     }
   }, [message, navigate]);
 
@@ -137,12 +129,7 @@ export function MessageDetailPage() {
 
   const handleKeyboardForward = useCallback((_messageId: string) => {
     if (message) {
-      const params = new URLSearchParams({
-        forward_from: message.id,
-        subject: message.subject.startsWith('Fwd: ') ? message.subject : `Fwd: ${message.subject}`,
-        account_id: message.account_id,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(forwardUrl(message));
     }
   }, [message, navigate]);
 
@@ -373,43 +360,21 @@ export function MessageDetailPage() {
     if (message) {
       // Navigate to compose page with reply parameters
       // Use the account that received the message as the default "From"
-      const params = new URLSearchParams({
-        reply_to: message.id,
-        to: message.from_email,
-        subject: message.subject.startsWith('Re: ') ? message.subject : `Re: ${message.subject}`,
-        thread_id: message.thread_id || '',
-        account_id: message.account_id,
-        quote_from: message.from_email,
-        quote_date: message.date,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(replyUrl(message));
     }
   };
 
   const handleForward = () => {
     if (message) {
       // Navigate to compose page with forward parameters
-      const params = new URLSearchParams({
-        subject: message.subject.startsWith('Fwd: ') ? message.subject : `Fwd: ${message.subject}`,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(forwardUrl(message));
     }
   };
 
   const handleSelectSmartReply = (replyText: string) => {
     if (message) {
       // Navigate to compose page with the smart reply pre-filled
-      const params = new URLSearchParams({
-        reply_to: message.id,
-        to: message.from_email,
-        subject: message.subject.startsWith('Re: ') ? message.subject : `Re: ${message.subject}`,
-        thread_id: message.thread_id || '',
-        account_id: message.account_id,
-        quote_from: message.from_email,
-        quote_date: message.date,
-        body: replyText,
-      });
-      navigate(`/compose?${params.toString()}`);
+      navigate(replyUrl(message, replyText));
     }
   };
 
